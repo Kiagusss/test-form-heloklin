@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Form Order Jasa Vakum - Multi Select dengan Search</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+  width: 100%;
+  height: 300px; /* atau sesuaikan tinggi peta */
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+    :root{
+      /* Palet 3-5 warna (1 primer, 2-3 netral, 1 aksen) */
+      --color-primary:#10b981; /* emerald */
+      --color-accent:#ef4444;  /* merah untuk hapus */
+      --neutral-900:#111827;
+      --neutral-500:#6b7280;
+      --neutral-100:#f3f4f6;
+      --white:#ffffff;
+
+      --radius:10px;
+      --shadow:0 6px 20px rgba(0,0,0,.08);
+      --shadow-sm:0 2px 10px rgba(0,0,0,.06);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--neutral-100);
+      color: var(--neutral-900);
+      line-height: 1.55;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 32px auto;
+      padding: 24px;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    h2 { margin: 0 0 8px; }
+    h3 { margin: 20px 0 8px; }
+
+    label {
+      display:block;
+      margin-top: 14px;
+      font-weight: 600;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select {
+      width:100%;
+      padding: 10px 12px;
+      border:1px solid #E5E7EB;
+      border-radius: 8px;
+      background: var(--white);
+      outline: none;
+      transition: box-shadow .2s, border-color .2s;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--primary-300, #6ee7b7);
+      box-shadow: 0 0 0 4px rgba(16,185,129,.15);
+    }
+    textarea { min-height: 100px; resize: vertical; }
+
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      width:100%;
+      margin-top: 16px;
+      background: var(--color-primary);
+      color: var(--white);
+      padding: 12px 14px;
+      border:0;
+      border-radius: 10px;
+      cursor:pointer;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+      transition: transform .05s ease, filter .2s ease;
+    }
+    .btn:hover { filter: brightness(.98); }
+    .btn:active { transform: translateY(1px); }
+    .btn-secondary{
+      width:auto;
+      background:#059669; /* lebih gelap sedikit */
+    }
+
+    hr {
+      border:0;
+      height:1px;
+      background:#e5e7eb;
+      margin: 20px 0;
+    }
+
+    /* Estimasi box */
+    #estimasi{
+      margin-top: 10px;
+      background: #f0fdf4;
+      border: 1px solid #dcfce7;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+    #estimasi p { margin: 0 0 6px; }
+
+    /* Native select disembunyikan tapi tetap ada untuk validasi/submit */
+    /* Jangan display:none agar validity masih bisa dicek manual */
+    .visually-hidden {
+      position: absolute !important;
+      left: -9999px !important;
+      width: 1px; height: 1px;
+      overflow: hidden;
+    }
+
+    /* Multi Select kustom */
+    .ms {
+      position: relative;
+      margin-top: 8px;
+    }
+    .ms-control {
+      min-height: 44px;
+      padding: 6px 8px;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      display:flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      cursor: text;
+      background: var(--white);
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .ms-control.is-open {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 4px rgba(16,185,129,.15);
+    }
+    .ms-placeholder {
+      color: var(--neutral-500);
+      font-size: 14px;
+      padding: 6px 4px;
+      user-select: none;
+    }
+    .ms-chips {
+      display:flex;
+      flex-wrap: wrap;
+      gap:6px;
+      align-items:center;
+      flex: 1 1 auto;
+    }
+    .ms-chip {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #ecfeff; /* subtle */
+      border: 1px solid #cffafe;
+      color: #0369a1;
+      font-size: 13px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .ms-chip button {
+      border:0;
+      background: transparent;
+      color: var(--neutral-500);
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      display:flex;
+      align-items:center;
+    }
+    .ms-input {
+      flex: 1 1 160px;
+      min-width: 120px;
+      border:0;
+      outline: none;
+      font-size: 14px;
+      padding: 6px 4px;
+    }
+
+    .ms-dropdown {
+      position:absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: var(--white);
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      z-index: 20;
+      display:none;
+    }
+    .ms-dropdown.open { display:block; }
+    .ms-search {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 10px;
+      border-bottom:1px solid #F3F4F6;
+    }
+    .ms-search input{
+      width:100%;
+      border:1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 8px 10px;
+      outline: none;
+      font-size: 14px;
+    }
+    .ms-actions {
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      padding: 8px 10px;
+      border-bottom:1px solid #F3F4F6;
+      gap:8px;
+    }
+    .ms-actions .link {
+      background: transparent;
+      color: var(--color-primary);
+      border:0;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .ms-list {
+      max-height: 220px;
+      overflow:auto;
+      padding: 6px 4px;
+    }
+    .ms-item {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .ms-item:hover { background: #f9fafb; }
+    .ms-item input { pointer-events: none; }
+    .ms-empty {
+      padding: 12px;
+      color: var(--neutral-500);
+      text-align: center;
+      font-size: 14px;
+      display:none;
+    }
+    .ms-empty.show { display:block; }
+
+    /* Info lokasi */
+    .info-box {
+      margin-top: 10px;
+      background:#f3f4f6;
+      border:1px solid #e5e7eb;
+      padding:10px;
+      border-radius:8px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 640px){
+      .container{ margin: 16px; padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Form Pemesanan Jasa Vakum</h2>
+
+    <form id="orderForm" novalidate>
+      <label for="nama">Nama:</label>
+      <input type="text" id="nama" required>
+
+      <label for="telepon">No. Tlp:</label>
+      <input type="text" id="telepon" required>
+
+      <h3>Share Lokasi Anda</h3>
+      <button type="button" id="btnLokasi" class="btn btn-secondary">📍 Dapatkan Lokasi Saya</button>
+       <div id="map"></div>
+      <div id="lokasiInfo" class="info-box" aria-live="polite" hidden></div>
+
+      <label for="alamat">Alamat Lengkap:</label>
+      <textarea id="alamat" required placeholder="Tolong isi alamat lengkap anda disini"></textarea>
+
+      <label for="kelurahan">Kelurahan:</label>
+      <input type="text" id="kelurahan" required>
+
+      <label for="kecamatan">Kecamatan:</label>
+      <input type="text" id="kecamatan" required>
+
+      <label for="kota">Kota:</label>
+      <input type="text" id="kota" required>
+
+      <hr>
+      <h3>#Waktu Kunjungan#</h3>
+      <label for="tanggal">Tanggal (dd/mm/yy):</label>
+      <input type="date" id="tanggal" required>
+
+      <label for="pukul">Pukul:</label>
+      <input type="time" id="pukul" required>
+
+      <hr>
+      <h3>#Rincian Layanan#</h3>
+
+      <label for="paket">Pilih Paket Anda:</label>
+
+       Select asli tetap ada untuk submit & sinkronisasi 
+      <select id="paket" class="visually-hidden" multiple required>
+        <option value="Package Basic|Rp 150.000|1 jam">Package Basic - Rp150.000 (1 jam)</option>
+        <option value="Package Standard|Rp 250.000|2 jam">Package Standard - Rp250.000 (2 jam)</option>
+        <option value="Package Ultimate 1|Rp 400.000|3 jam">Package Ultimate 1 - Rp400.000 (3 jam)</option>
+        <option value="Package Ultimate 2|Rp 600.000|4 jam">Package Ultimate 2 - Rp600.000 (4 jam)</option>
+      </select>
+
+       Multi Select Kustom 
+      <div class="ms" id="paket-ms">
+        <div class="ms-control" role="combobox" aria-expanded="false" aria-owns="paket-list" aria-haspopup="listbox">
+          <div class="ms-chips" id="paket-chips"></div>
+          <input class="ms-input" id="paket-search" type="text" placeholder="Cari & pilih paket..." aria-autocomplete="list" aria-controls="paket-list" />
+          <span class="ms-placeholder" id="paket-placeholder">Pilih satu atau lebih paket</span>
+        </div>
+        <div class="ms-dropdown" id="paket-dropdown" role="listbox" aria-multiselectable="true">
+          <div class="ms-search">
+            <input type="text" id="paket-search-dup" placeholder="Ketik untuk mencari paket..." aria-label="Cari paket">
+          </div>
+          <div class="ms-actions">
+            <button type="button" class="link" id="paket-select-all">Pilih semua</button>
+            <button type="button" class="link" id="paket-clear">Hapus semua</button>
+          </div>
+          <div class="ms-list" id="paket-list"></div>
+          <div class="ms-empty" id="paket-empty">Tidak ada hasil</div>
+        </div>
+      </div>
+
+      <div id="estimasi" aria-live="polite"></div>
+
+      <hr>
+
+      <button type="submit" class="btn">Kirim ke WhatsApp</button>
+    </form>
+  </div>
+
+  <script>
+    (function(){
+      // Util
+      const byId = (id)=>document.getElementById(id);
+
+      // State lokasi
+      let userLat = null, userLng = null;
+
+      // Ambil lokasi sederhana (tanpa peta/library)
+      const btnLokasi = byId('btnLokasi');
+      const lokasiInfo = byId('lokasiInfo');
+      btnLokasi.addEventListener('click', async ()=>{
+        if(!navigator.geolocation){
+          alert('Browser Anda tidak mendukung geolocation.');
+          return;
+        }
+        btnLokasi.disabled = true;
+        const prev = btnLokasi.textContent;
+        btnLokasi.textContent = '📍 Mendapatkan lokasi...';
+        navigator.geolocation.getCurrentPosition(async (pos)=>{
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+          lokasiInfo.hidden = false;
+          lokasiInfo.innerHTML = '<strong>📍 Koordinat Anda:</strong><br>' +
+            'Lat: '+userLat.toFixed(6)+', Lng: '+userLng.toFixed(6) +
+            '<br><a target="_blank" href="https://www.google.com/maps?q='+userLat+','+userLng+'">Lihat di Google Maps</a>';
+          btnLokasi.textContent = '✅ Lokasi Berhasil Didapatkan';
+          btnLokasi.disabled = false;
+        },()=>{
+          alert('Gagal mendapatkan lokasi. Aktifkan GPS dan izinkan akses lokasi.');
+          btnLokasi.textContent = prev;
+          btnLokasi.disabled = false;
+        },{enableHighAccuracy:true, timeout:10000});
+      });
+
+      // MultiSelect Kustom untuk #paket
+      const selectEl = byId('paket');
+      const msRoot = byId('paket-ms');
+      const msControl = msRoot.querySelector('.ms-control');
+      const chipsWrap = byId('paket-chips');
+      const inputInline = byId('paket-search');
+      const dropdown = byId('paket-dropdown');
+      const listWrap = byId('paket-list');
+      const emptyEl = byId('paket-empty');
+      const searchDup = byId('paket-search-dup');
+      const btnSelectAll = byId('paket-select-all');
+      const btnClear = byId('paket-clear');
+      const placeholder = byId('paket-placeholder');
+
+      const options = Array.from(selectEl.options).map((o, idx)=>({
+        label: o.text,
+        value: o.value,
+        selected: o.selected,
+        idx
+      }));
+
+      function openDropdown(){
+        dropdown.classList.add('open');
+        msControl.classList.add('is-open');
+        msControl.setAttribute('aria-expanded', 'true');
+        searchDup.value = inputInline.value;
+        searchDup.focus();
+        filterList(searchDup.value);
+      }
+      function closeDropdown(){
+        dropdown.classList.remove('open');
+        msControl.classList.remove('is-open');
+        msControl.setAttribute('aria-expanded', 'false');
+      }
+
+      // Render list options
+      function renderList(filtered = options){
+        listWrap.innerHTML = '';
+        filtered.forEach(opt=>{
+          const item = document.createElement('div');
+          item.className = 'ms-item';
+          item.setAttribute('role','option');
+          item.setAttribute('aria-selected', String(!!opt.selected));
+          item.dataset.value = opt.value;
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = !!opt.selected;
+          cb.tabIndex = -1;
+
+          const label = document.createElement('span');
+          label.textContent = opt.label;
+
+          item.appendChild(cb);
+          item.appendChild(label);
+          item.addEventListener('click', ()=>{
+            toggleValue(opt.value);
+          });
+
+          listWrap.appendChild(item);
+        });
+        emptyEl.classList.toggle('show', filtered.length === 0);
+      }
+
+      // Render chips
+      function renderChips(){
+        chipsWrap.innerHTML = '';
+        const selected = options.filter(o=>o.selected);
+        selected.forEach(opt=>{
+          const chip = document.createElement('span');
+          chip.className = 'ms-chip';
+          chip.innerHTML = '<span>'+opt.label+'</span>';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.setAttribute('aria-label','Hapus '+opt.label);
+          btn.innerHTML = '✕';
+          btn.addEventListener('click', ()=>{
+            setSelected(opt.value, false);
+          });
+        chip.appendChild(btn);
+          chipsWrap.appendChild(chip);
+        });
+        placeholder.style.display = selected.length ? 'none':'inline';
+      }
+
+      // Sync ke <select>
+      function syncSelect(){
+        // Clear semua
+        for(const o of selectEl.options){ o.selected = false; }
+        // Set yang dipilih
+        options.forEach((opt, i)=>{
+          if(opt.selected) selectEl.options[i].selected = true;
+        });
+        // Trigger change untuk hitung estimasi
+        const evt = new Event('change', {bubbles:true});
+        selectEl.dispatchEvent(evt);
+      }
+
+      function setSelected(value, state){
+        const opt = options.find(o=>o.value===value);
+        if(!opt) return;
+        opt.selected = !!state;
+        // Update list checkbox
+        const item = listWrap.querySelector('[data-value="'+CSS.escape(value)+'"] input[type="checkbox"]');
+        if(item) item.checked = opt.selected;
+        // Update aria
+        const row = listWrap.querySelector('[data-value="'+CSS.escape(value)+'"]');
+        if(row) row.setAttribute('aria-selected', String(!!state));
+        renderChips();
+        syncSelect();
+      }
+      function toggleValue(value){
+        const opt = options.find(o=>o.value===value);
+        setSelected(value, !opt.selected);
+      }
+
+      function filterList(q){
+        const term = (q||'').trim().toLowerCase();
+        const filtered = term ? options.filter(o=>o.label.toLowerCase().includes(term)) : options;
+        renderList(filtered);
+      }
+
+      // Select all / clear
+      btnSelectAll.addEventListener('click', ()=>{
+        options.forEach(o=>o.selected = true);
+        renderList();
+        renderChips();
+        syncSelect();
+      });
+      btnClear.addEventListener('click', ()=>{
+        options.forEach(o=>o.selected = false);
+        renderList();
+        renderChips();
+        syncSelect();
+      });
+
+      // Open/close handlers
+      msControl.addEventListener('click', (e)=>{
+        if(dropdown.classList.contains('open')) return;
+        openDropdown();
+      });
+      inputInline.addEventListener('focus', ()=>{ if(!dropdown.classList.contains('open')) openDropdown(); });
+      searchDup.addEventListener('input', (e)=> filterList(e.target.value));
+      inputInline.addEventListener('input', (e)=> filterList(e.target.value));
+
+      // Backspace hapus chip terakhir jika input kosong
+      inputInline.addEventListener('keydown', (e)=>{
+        if(e.key === 'Backspace' && !inputInline.value && options.some(o=>o.selected)){
+          const last = [...options].reverse().find(o=>o.selected);
+          if(last) setSelected(last.value, false);
+        }
+        if(e.key === 'ArrowDown'){ e.preventDefault(); openDropdown(); }
+      });
+
+      document.addEventListener('click', (e)=>{
+        if(!msRoot.contains(e.target)) closeDropdown();
+      });
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeDropdown();
+      });
+
+      // Init renders
+      renderList(options);
+      renderChips();
+
+      // Estimasi perubahannya mengikuti select#paket
+      const estimasiDiv = byId('estimasi');
+      function hitungEstimasi(){
+        const selectedValues = Array.from(selectEl.selectedOptions).map(opt=>opt.value.split('|'));
+        let total = 0;
+        let waktu = 0;
+        let list = '';
+        selectedValues.forEach(([nama, harga, durasi])=>{
+          total += parseInt((harga||'').replace(/\D/g, ''), 10) || 0;
+          waktu += parseInt(durasi, 10) || 0;
+          list += '- '+nama+' ('+harga+', '+durasi+')\n';
+        });
+        if(selectedValues.length){
+          estimasiDiv.innerHTML =
+            '<p><strong>Estimasi Total:</strong> Rp '+ total.toLocaleString('id-ID') +'</p>'+
+            '<p><strong>Estimasi Waktu:</strong> ± '+ waktu +' jam</p>'+
+            '<pre style="margin:0;white-space:pre-wrap">'+list+'</pre>';
+        } else {
+          estimasiDiv.textContent = '';
+        }
+      }
+      selectEl.addEventListener('change', hitungEstimasi);
+      hitungEstimasi(); // initial
+
+      // Submit ke WhatsApp
+      const form = byId('orderForm');
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault();
+
+        // Validasi minimal: wajib pilih paket
+        if(selectEl.selectedOptions.length === 0){
+          alert('Silakan pilih minimal satu paket.');
+          openDropdown();
+          return;
+        }
+
+        const nama = byId('nama').value.trim();
+        const telepon = byId('telepon').value.trim();
+        const alamat = byId('alamat').value.trim();
+        const kelurahan = byId('kelurahan').value.trim();
+        const kecamatan = byId('kecamatan').value.trim();
+        const kota = byId('kota').value.trim();
+        const tanggal = byId('tanggal').value;
+        const pukul = byId('pukul').value;
+        const paket = Array.from(selectEl.selectedOptions).map(opt=>opt.text);
+
+        const lokasiLink = (userLat && userLng)
+          ? ('https://www.google.com/maps?q='+userLat+','+userLng)
+          : 'Belum membagikan lokasi';
+
+        const pesan = `
+Mohon di lengkapi data pemesanannya sebagai berikut pak/bu
+
+———————————
+#Pemesan#
+———————————
+Nama: ${nama}
+No.Tlp: ${telepon}
+Alamat: ${alamat}
+Kelurahan: ${kelurahan}
+Kecamatan: ${kecamatan}
+Kota: ${kota}
+———————————
+#Waktu Kunjungan#
+———————————
+Tgl. (yy/mm/dd): ${tanggal}
+Pukul: ${pukul}
+#Rincian Layanan#
+———————————
+Item yang dikerjakan & Estimasi Biayanya:
+${paket.map(p => '- ' + p).join('\n')}
+———————————
+Lokasi: ${lokasiLink}`.trim();
+
+        const encoded = encodeURIComponent(pesan);
+        const target = '6287887407806';
+        window.open('https://wa.me/'+target+'?text='+encoded, '_blank');
+      });
+    })();
+     let map, marker, userLat, userLng;
+
+    window.onload = function() {
+      if (document.getElementById("map")) initMap();
+
+      const btnLokasi = document.getElementById("btnLokasi");
+      btnLokasi.addEventListener("click", () => {
+        if (navigator.geolocation) {
+          btnLokasi.innerText = "📍 Mendapatkan lokasi...";
+          navigator.geolocation.getCurrentPosition(async (pos) => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([userLat, userLng]).addTo(map);
+            map.setView([userLat, userLng], 15);
+
+            btnLokasi.innerText = "✅ Lokasi Berhasil Didapatkan";
+          });
+        }
+      });
+    };
+
+    function initMap() {
+      map = L.map("map").setView([-6.2, 106.8], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+    }
+  </script>
+</body>
+</html>
