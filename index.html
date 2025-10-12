@@ -320,10 +320,10 @@
 
       
       <select id="paket" class="visually-hidden" multiple required>
-        <option value="Package Basic|Rp 150.000|1 jam">Package Basic - Rp150.000 (1 jam)</option>
-        <option value="Package Standard|Rp 250.000|2 jam">Package Standard - Rp250.000 (2 jam)</option>
-        <option value="Package Ultimate 1|Rp 400.000|3 jam">Package Ultimate 1 - Rp400.000 (3 jam)</option>
-        <option value="Package Ultimate 2|Rp 600.000|4 jam">Package Ultimate 2 - Rp600.000 (4 jam)</option>
+        <option value="Package Basic|Rp 150.000|1 jam">Package Basic - Rp150.000 </option>
+        <option value="Package Standard|Rp 250.000|2 jam">Package Standard - Rp250.000</option>
+        <option value="Package Ultimate 1|Rp 400.000|3 jam">Package Ultimate 1 - Rp400.000 </option>
+        <option value="Package Ultimate 2|Rp 600.000|4 jam">Package Ultimate 2 - Rp600.000 </option>
       </select>
 
       *Bisa pilih lebih dari satu paket
@@ -557,24 +557,25 @@
       // Estimasi perubahannya mengikuti select#paket
       const estimasiDiv = byId('estimasi');
       function hitungEstimasi(){
-        const selectedValues = Array.from(selectEl.selectedOptions).map(opt=>opt.value.split('|'));
-        let total = 0;
-        let waktu = 0;
-        let list = '';
-        selectedValues.forEach(([nama, harga, durasi])=>{
-          total += parseInt((harga||'').replace(/\D/g, ''), 10) || 0;
-          waktu += parseInt(durasi, 10) || 0;
-          list += '- '+nama+' ('+harga+', '+durasi+')\n';
-        });
-        if(selectedValues.length){
-          estimasiDiv.innerHTML =
-            '<p><strong>Estimasi Total:</strong> Rp '+ total.toLocaleString('id-ID') +'</p>'+
-            '<p><strong>Estimasi Waktu:</strong> ± '+ waktu +' jam</p>'+
-            '<pre style="margin:0;white-space:pre-wrap">'+list+'</pre>';
-        } else {
-          estimasiDiv.textContent = '';
-        }
-      }
+  const selectedValues = Array.from(selectEl.selectedOptions).map(opt=>opt.value.split('|'));
+  let total = 0;
+  let waktu = 0;
+  let list = '';
+  selectedValues.forEach(([nama, harga, durasi])=>{
+    total += parseInt((harga||'').replace(/\D/g, ''), 10) || 0;
+    waktu += parseInt(durasi, 10) || 0;
+    list += '- '+nama+' ('+harga+')\n'; // hanya tampil harga per item, tanpa durasi
+  });
+  if(selectedValues.length){
+    estimasiDiv.innerHTML =
+      '<p><strong>Estimasi Total:</strong> Rp '+ total.toLocaleString('id-ID') +'</p>'+
+      '<p><strong>Estimasi Waktu:</strong> ± '+ waktu +' jam</p>'+
+      '<pre style="margin:0;white-space:pre-wrap">'+list+'</pre>';
+  } else {
+    estimasiDiv.textContent = '';
+  }
+}
+
       selectEl.addEventListener('change', hitungEstimasi);
       hitungEstimasi(); // initial
 
@@ -635,31 +636,66 @@ Lokasi: ${lokasiLink}`.trim();
     })();
      let map, marker, userLat, userLng;
 
-    window.onload = function() {
-      if (document.getElementById("map")) initMap();
+window.onload = function() {
+  if (document.getElementById("map")) initMap();
 
-      const btnLokasi = document.getElementById("btnLokasi");
-      btnLokasi.addEventListener("click", () => {
-        if (navigator.geolocation) {
-          btnLokasi.innerText = "📍 Mendapatkan lokasi...";
-          navigator.geolocation.getCurrentPosition(async (pos) => {
-            userLat = pos.coords.latitude;
-            userLng = pos.coords.longitude;
+  const btnLokasi = document.getElementById("btnLokasi");
+  btnLokasi.addEventListener("click", () => {
+    if (navigator.geolocation) {
+      btnLokasi.innerText = "📍 Mendapatkan lokasi...";
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
 
-            if (marker) map.removeLayer(marker);
-            marker = L.marker([userLat, userLng]).addTo(map);
-            map.setView([userLat, userLng], 15);
+        // Tampilkan marker di peta
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([userLat, userLng]).addTo(map);
+        map.setView([userLat, userLng], 15);
 
-            btnLokasi.innerText = "✅ Lokasi Berhasil Didapatkan";
-          });
+        btnLokasi.innerText = "✅ Lokasi Berhasil Didapatkan";
+
+        // 🔹 Ambil detail alamat dari Nominatim
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&addressdetails=1`
+          );
+          const data = await response.json();
+
+          if (data && data.address) {
+            const addr = data.address;
+
+            // ✅ Masukkan data ke input form
+            document.getElementById("alamat").value =
+              data.display_name || "Tidak diketahui";
+            document.getElementById("kelurahan").value =
+              addr.suburb || addr.village || addr.hamlet || "";
+            document.getElementById("kecamatan").value =
+              addr.city_district || addr.county || addr.state_district || "";
+            document.getElementById("kota").value =
+              addr.city || addr.town || addr.municipality || addr.state || "";
+
+            console.log("Alamat lengkap:", data.display_name);
+          } else {
+            alert("Gagal membaca data alamat.");
+          }
+        } catch (err) {
+          console.error("Gagal mengambil alamat:", err);
+          alert("Tidak dapat memuat detail alamat.");
         }
-      });
-    };
-
-    function initMap() {
-      map = L.map("map").setView([-6.2, 106.8], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+      },
+      () => {
+        alert("Gagal mendapatkan lokasi. Aktifkan GPS dan izinkan akses lokasi.");
+        btnLokasi.innerText = "📍 Dapatkan Lokasi Saya";
+      },
+      { enableHighAccuracy: true, timeout: 10000 });
     }
+  });
+};
+
+function initMap() {
+  map = L.map("map").setView([-6.2, 106.8], 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+}
   </script>
 </body>
 </html>
