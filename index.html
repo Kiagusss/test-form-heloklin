@@ -5,24 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Form Order Jasa Vakum</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Include Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     #map {
-  width: 100%;
-  height: 300px; /* atau sesuaikan tinggi peta */
-  margin-top: 10px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-}
+      width: 100%;
+      height: 300px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
     :root{
-      /* Palet 3-5 warna (1 primer, 2-3 netral, 1 aksen) */
-      --color-primary:#10b981; /* emerald */
-      --color-accent:#ef4444;  /* merah untuk hapus */
+      --color-primary:#10b981;
+      --color-accent:#ef4444;
       --neutral-900:#111827;
       --neutral-500:#6b7280;
       --neutral-100:#f3f4f6;
       --white:#ffffff;
-
       --radius:10px;
       --shadow:0 6px 20px rgba(0,0,0,.08);
       --shadow-sm:0 2px 10px rgba(0,0,0,.06);
@@ -94,7 +94,11 @@
     .btn:active { transform: translateY(1px); }
     .btn-secondary{
       width:auto;
-      background:#059669; /* lebih gelap sedikit */
+      background:#059669;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     hr {
@@ -116,8 +120,44 @@
     }
     #estimasi p { margin: 0 0 6px; }
 
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 1000;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    }
+    .toast.show {
+      transform: translateX(0);
+    }
+    .toast.success {
+      background: #10b981;
+    }
+    .toast.error {
+      background: #ef4444;
+    }
+
     /* Native select disembunyikan tapi tetap ada untuk validasi/submit */
-    /* Jangan display:none agar validity masih bisa dicek manual */
     .visually-hidden {
       position: absolute !important;
       left: -9999px !important;
@@ -166,7 +206,7 @@
       gap:6px;
       padding: 6px 10px;
       border-radius: 999px;
-      background: #ecfeff; /* subtle */
+      background: #ecfeff;
       border: 1px solid #cffafe;
       color: #0369a1;
       font-size: 13px;
@@ -290,7 +330,7 @@
 
       <h3>Share Lokasi Anda</h3>
       <button type="button" id="btnLokasi" class="btn btn-secondary">📍 Dapatkan Lokasi Saya</button>
-       <div id="map"></div>
+      <div id="map"></div>
       <div id="lokasiInfo" class="info-box" aria-live="polite" hidden></div>
 
       <label for="alamat">Alamat Lengkap:</label>
@@ -318,12 +358,9 @@
 
       <label for="paket">Pilih Paket Anda:</label>
 
-      
+      <!-- Hidden select untuk packages dari database -->
       <select id="paket" class="visually-hidden" multiple required>
-        <option value="Package Basic|Rp 150.000|1 jam">Package Basic - Rp150.000 </option>
-        <option value="Package Standard|Rp 250.000|2 jam">Package Standard - Rp250.000</option>
-        <option value="Package Ultimate 1|Rp 400.000|3 jam">Package Ultimate 1 - Rp400.000 </option>
-        <option value="Package Ultimate 2|Rp 600.000|4 jam">Package Ultimate 2 - Rp600.000 </option>
+        <!-- Options akan diisi oleh JavaScript dari database -->
       </select>
 
       *Bisa pilih lebih dari satu paket
@@ -350,21 +387,379 @@
 
       <hr>
 
-      <button type="submit" class="btn">Kirim ke WhatsApp</button>
+      <button type="submit" class="btn" id="submitBtn">
+        <span id="submitText">Kirim ke WhatsApp</span>
+        <div id="submitSpinner" class="spinner" style="display: none;"></div>
+      </button>
     </form>
   </div>
 
   <script>
-    (function(){
-      // Util
-      const byId = (id)=>document.getElementById(id);
+    // Konfigurasi Supabase - GANTI DENGAN KONFIGURASI ANDA
+ const SUPABASE_URL = 'https://pxiiqlyajgoeocyjfjji.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aWlxbHlhamdvZW9jeWpmamppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMjQ1NTAsImV4cCI6MjA3NTkwMDU1MH0.9PC9a-LA5MR6p7sibIbcGGQyEiSKpXPAycV0vOO83AE';
+    
+    // Inisialisasi Supabase
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // State lokasi
-      let userLat = null, userLng = null;
+    // Global variables
+    let map, marker, userLat, userLng;
 
-      // Ambil lokasi sederhana (tanpa peta/library)
-      const btnLokasi = byId('btnLokasi');
-      const lokasiInfo = byId('lokasiInfo');
+    // Toast notification function
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => toast.classList.add('show'), 100);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Initialize map
+    function initMap() {
+      const mapElement = document.getElementById('map');
+      if (!mapElement) {
+        console.error('Map element not found');
+        return;
+      }
+
+      try {
+        map = L.map('map').setView([-6.2, 106.8], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        console.log('Map initialized successfully');
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
+    }
+
+    // Ambil data packages dari database - HANYA dari tabel package
+    async function loadPackages() {
+      try {
+        console.log('Loading packages from database...');
+        
+        const { data: packages, error } = await supabase
+          .from('package')
+          .select('*')
+          .order('price', { ascending: true });
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        console.log('Packages loaded:', packages);
+
+        const selectEl = document.getElementById('paket');
+        if (!selectEl) {
+          console.error('Package select element not found');
+          return;
+        }
+
+        selectEl.innerHTML = '';
+        
+        if (packages && packages.length > 0) {
+          packages.forEach(pkg => {
+            const option = document.createElement('option');
+            option.value = `${pkg.id}|${pkg.name}|${pkg.price}`;
+            option.textContent = `${pkg.name} - Rp ${pkg.price.toLocaleString('id-ID')}`;
+            selectEl.appendChild(option);
+          });
+          
+          console.log('Packages added to select:', packages.length);
+          
+          // Re-initialize multi-select dengan data baru
+          initializeMultiSelect();
+        } else {
+          console.warn('No packages found in database');
+          showToast('Tidak ada paket tersedia', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading packages:', error);
+        showToast('Gagal memuat data paket dari database', 'error');
+        
+        // Fallback: tampilkan paket default jika database error
+        loadDefaultPackages();
+      }
+    }
+
+    // Fallback function jika database tidak bisa diakses
+    function loadDefaultPackages() {
+      const selectEl = document.getElementById('paket');
+      if (!selectEl) return;
+
+      const defaultPackages = [
+        { id: 1, name: 'Package Basic', price: 150000 },
+        { id: 2, name: 'Package Standard', price: 250000 },
+        { id: 3, name: 'Package Ultimate 1', price: 400000 },
+        { id: 4, name: 'Package Ultimate 2', price: 600000 }
+      ];
+
+      selectEl.innerHTML = '';
+      
+      defaultPackages.forEach(pkg => {
+        const option = document.createElement('option');
+        option.value = `${pkg.id}|${pkg.name}|${pkg.price}`;
+        option.textContent = `${pkg.name} - Rp ${pkg.price.toLocaleString('id-ID')}`;
+        selectEl.appendChild(option);
+      });
+
+      console.log('Loaded default packages');
+      initializeMultiSelect();
+    }
+
+    // MultiSelect Kustom untuk #paket
+    let selectEl, msRoot, msControl, chipsWrap, inputInline, dropdown, listWrap, emptyEl, searchDup, btnSelectAll, btnClear, placeholder;
+    let options = [];
+
+    function initializeMultiSelect() {
+      selectEl = document.getElementById('paket');
+      msRoot = document.getElementById('paket-ms');
+      
+      if (!selectEl || !msRoot) {
+        console.error('Multi-select elements not found');
+        return;
+      }
+
+      msControl = msRoot.querySelector('.ms-control');
+      chipsWrap = document.getElementById('paket-chips');
+      inputInline = document.getElementById('paket-search');
+      dropdown = document.getElementById('paket-dropdown');
+      listWrap = document.getElementById('paket-list');
+      emptyEl = document.getElementById('paket-empty');
+      searchDup = document.getElementById('paket-search-dup');
+      btnSelectAll = document.getElementById('paket-select-all');
+      btnClear = document.getElementById('paket-clear');
+      placeholder = document.getElementById('paket-placeholder');
+
+      // Pastikan semua elemen ada
+      if (!msControl || !chipsWrap || !inputInline || !dropdown || !listWrap || !emptyEl || !searchDup || !btnSelectAll || !btnClear || !placeholder) {
+        console.error('Some multi-select elements are missing');
+        return;
+      }
+
+      options = Array.from(selectEl.options).map((o, idx)=>({
+        label: o.text,
+        value: o.value,
+        selected: o.selected,
+        idx
+      }));
+
+      // Re-initialize semua event listeners
+      initMultiSelectEvents();
+      renderList(options);
+      renderChips();
+      
+      console.log('Multi-select initialized with', options.length, 'packages');
+    }
+
+    function openDropdown(){
+      dropdown.classList.add('open');
+      msControl.classList.add('is-open');
+      msControl.setAttribute('aria-expanded', 'true');
+      searchDup.value = inputInline.value;
+      searchDup.focus();
+      filterList(searchDup.value);
+    }
+    
+    function closeDropdown(){
+      dropdown.classList.remove('open');
+      msControl.classList.remove('is-open');
+      msControl.setAttribute('aria-expanded', 'false');
+    }
+
+    // Render list options
+    function renderList(filtered = options){
+      if (!listWrap) return;
+      
+      listWrap.innerHTML = '';
+      filtered.forEach(opt=>{
+        const item = document.createElement('div');
+        item.className = 'ms-item';
+        item.setAttribute('role','option');
+        item.setAttribute('aria-selected', String(!!opt.selected));
+        item.dataset.value = opt.value;
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!opt.selected;
+        cb.tabIndex = -1;
+
+        const label = document.createElement('span');
+        label.textContent = opt.label;
+
+        item.appendChild(cb);
+        item.appendChild(label);
+        item.addEventListener('click', ()=>{
+          toggleValue(opt.value);
+        });
+
+        listWrap.appendChild(item);
+      });
+      emptyEl.classList.toggle('show', filtered.length === 0);
+    }
+
+    // Render chips
+    function renderChips(){
+      if (!chipsWrap) return;
+      
+      chipsWrap.innerHTML = '';
+      const selected = options.filter(o=>o.selected);
+      selected.forEach(opt=>{
+        const chip = document.createElement('span');
+        chip.className = 'ms-chip';
+        chip.innerHTML = '<span>'+opt.label+'</span>';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('aria-label','Hapus '+opt.label);
+        btn.innerHTML = '✕';
+        btn.addEventListener('click', ()=>{
+          setSelected(opt.value, false);
+        });
+        chip.appendChild(btn);
+        chipsWrap.appendChild(chip);
+      });
+      if (placeholder) {
+        placeholder.style.display = selected.length ? 'none':'inline';
+      }
+    }
+
+    // Sync ke <select>
+    function syncSelect(){
+      if (!selectEl) return;
+      
+      for(const o of selectEl.options){ o.selected = false; }
+      options.forEach((opt, i)=>{
+        if(opt.selected) selectEl.options[i].selected = true;
+      });
+      const evt = new Event('change', {bubbles:true});
+      selectEl.dispatchEvent(evt);
+    }
+
+    function setSelected(value, state){
+      const opt = options.find(o=>o.value===value);
+      if(!opt) return;
+      opt.selected = !!state;
+      const item = listWrap?.querySelector('[data-value="'+CSS.escape(value)+'"] input[type="checkbox"]');
+      if(item) item.checked = opt.selected;
+      const row = listWrap?.querySelector('[data-value="'+CSS.escape(value)+'"]');
+      if(row) row.setAttribute('aria-selected', String(!!state));
+      renderChips();
+      syncSelect();
+    }
+    
+    function toggleValue(value){
+      const opt = options.find(o=>o.value===value);
+      setSelected(value, !opt.selected);
+    }
+
+    function filterList(q){
+      const term = (q||'').trim().toLowerCase();
+      const filtered = term ? options.filter(o=>o.label.toLowerCase().includes(term)) : options;
+      renderList(filtered);
+    }
+
+    function initMultiSelectEvents() {
+      // Select all / clear
+      if (btnSelectAll) {
+        btnSelectAll.addEventListener('click', ()=>{
+          options.forEach(o=>o.selected = true);
+          renderList();
+          renderChips();
+          syncSelect();
+        });
+      }
+      
+      if (btnClear) {
+        btnClear.addEventListener('click', ()=>{
+          options.forEach(o=>o.selected = false);
+          renderList();
+          renderChips();
+          syncSelect();
+        });
+      }
+
+      // Open/close handlers
+      if (msControl) {
+        msControl.addEventListener('click', (e)=>{
+          if(dropdown.classList.contains('open')) return;
+          openDropdown();
+        });
+      }
+      
+      if (inputInline) {
+        inputInline.addEventListener('focus', ()=>{ if(!dropdown.classList.contains('open')) openDropdown(); });
+        inputInline.addEventListener('input', (e)=> filterList(e.target.value));
+      }
+
+      if (searchDup) {
+        searchDup.addEventListener('input', (e)=> filterList(e.target.value));
+      }
+
+      // Backspace hapus chip terakhir jika input kosong
+      if (inputInline) {
+        inputInline.addEventListener('keydown', (e)=>{
+          if(e.key === 'Backspace' && !inputInline.value && options.some(o=>o.selected)){
+            const last = [...options].reverse().find(o=>o.selected);
+            if(last) setSelected(last.value, false);
+          }
+          if(e.key === 'ArrowDown'){ e.preventDefault(); openDropdown(); }
+        });
+      }
+
+      document.addEventListener('click', (e)=>{
+        if(!msRoot?.contains(e.target)) closeDropdown();
+      });
+      
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeDropdown();
+      });
+    }
+
+    // Estimasi perubahannya mengikuti select#paket
+    function initializeEstimation() {
+      const estimasiDiv = document.getElementById('estimasi');
+      const selectEl = document.getElementById('paket');
+      
+      if (!estimasiDiv || !selectEl) return;
+
+      function hitungEstimasi(){
+        const selectedValues = Array.from(selectEl.selectedOptions).map(opt=>{
+          const [id, nama, harga] = opt.value.split('|');
+          return { id, nama, harga: parseInt(harga) };
+        });
+        
+        let total = 0;
+        let list = '';
+        selectedValues.forEach(({nama, harga})=>{
+          total += harga || 0;
+          list += '- '+nama+' (Rp '+ harga.toLocaleString('id-ID') +')\n';
+        });
+        
+        if(selectedValues.length){
+          estimasiDiv.innerHTML =
+            '<p><strong>Estimasi Total:</strong> Rp '+ total.toLocaleString('id-ID') +'</p>'+
+            '<pre style="margin:0;white-space:pre-wrap">'+list+'</pre>';
+        } else {
+          estimasiDiv.textContent = '';
+        }
+      }
+
+      selectEl.addEventListener('change', hitungEstimasi);
+    }
+
+    // Initialize location button
+    function initializeLocationButton() {
+      const btnLokasi = document.getElementById('btnLokasi');
+      const lokasiInfo = document.getElementById('lokasiInfo');
+      
+      if (!btnLokasi || !lokasiInfo) return;
+
       btnLokasi.addEventListener('click', async ()=>{
         if(!navigator.geolocation){
           alert('Browser Anda tidak mendukung geolocation.');
@@ -373,216 +768,66 @@
         btnLokasi.disabled = true;
         const prev = btnLokasi.textContent;
         btnLokasi.textContent = '📍 Mendapatkan lokasi...';
+        
         navigator.geolocation.getCurrentPosition(async (pos)=>{
           userLat = pos.coords.latitude;
           userLng = pos.coords.longitude;
+          
+          // Tampilkan marker di peta
+          if (marker && map) {
+            map.removeLayer(marker);
+          }
+          if (map) {
+            marker = L.marker([userLat, userLng]).addTo(map);
+            map.setView([userLat, userLng], 15);
+          }
+
           lokasiInfo.hidden = false;
           lokasiInfo.innerHTML = '<strong>📍 Koordinat Anda:</strong><br>' +
             'Lat: '+userLat.toFixed(6)+', Lng: '+userLng.toFixed(6) +
             '<br><a target="_blank" href="https://www.google.com/maps?q='+userLat+','+userLng+'">Lihat di Google Maps</a>';
           btnLokasi.textContent = '✅ Lokasi Berhasil Didapatkan';
           btnLokasi.disabled = false;
+
+          // Ambil alamat dari koordinat
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&addressdetails=1`
+            );
+            const data = await response.json();
+
+            if (data && data.address) {
+              const addr = data.address;
+              document.getElementById("alamat").value = data.display_name || "Tidak diketahui";
+              document.getElementById("kelurahan").value = addr.suburb || addr.village || addr.hamlet || "";
+              document.getElementById("kecamatan").value = addr.city_district || addr.county || addr.state_district || "";
+              document.getElementById("kota").value = addr.city || addr.town || addr.municipality || addr.state || "";
+            }
+          } catch (err) {
+            console.error("Gagal mengambil alamat:", err);
+          }
         },()=>{
           alert('Gagal mendapatkan lokasi. Aktifkan GPS dan izinkan akses lokasi.');
           btnLokasi.textContent = prev;
           btnLokasi.disabled = false;
         },{enableHighAccuracy:true, timeout:10000});
       });
+    }
 
-      // MultiSelect Kustom untuk #paket
-      const selectEl = byId('paket');
-      const msRoot = byId('paket-ms');
-      const msControl = msRoot.querySelector('.ms-control');
-      const chipsWrap = byId('paket-chips');
-      const inputInline = byId('paket-search');
-      const dropdown = byId('paket-dropdown');
-      const listWrap = byId('paket-list');
-      const emptyEl = byId('paket-empty');
-      const searchDup = byId('paket-search-dup');
-      const btnSelectAll = byId('paket-select-all');
-      const btnClear = byId('paket-clear');
-      const placeholder = byId('paket-placeholder');
+    // Initialize form submission
+    function initializeFormSubmission() {
+      const form = document.getElementById('orderForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const submitText = document.getElementById('submitText');
+      const submitSpinner = document.getElementById('submitSpinner');
+      
+      if (!form || !submitBtn || !submitText || !submitSpinner) return;
 
-      const options = Array.from(selectEl.options).map((o, idx)=>({
-        label: o.text,
-        value: o.value,
-        selected: o.selected,
-        idx
-      }));
-
-      function openDropdown(){
-        dropdown.classList.add('open');
-        msControl.classList.add('is-open');
-        msControl.setAttribute('aria-expanded', 'true');
-        searchDup.value = inputInline.value;
-        searchDup.focus();
-        filterList(searchDup.value);
-      }
-      function closeDropdown(){
-        dropdown.classList.remove('open');
-        msControl.classList.remove('is-open');
-        msControl.setAttribute('aria-expanded', 'false');
-      }
-
-      // Render list options
-      function renderList(filtered = options){
-        listWrap.innerHTML = '';
-        filtered.forEach(opt=>{
-          const item = document.createElement('div');
-          item.className = 'ms-item';
-          item.setAttribute('role','option');
-          item.setAttribute('aria-selected', String(!!opt.selected));
-          item.dataset.value = opt.value;
-
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = !!opt.selected;
-          cb.tabIndex = -1;
-
-          const label = document.createElement('span');
-          label.textContent = opt.label;
-
-          item.appendChild(cb);
-          item.appendChild(label);
-          item.addEventListener('click', ()=>{
-            toggleValue(opt.value);
-          });
-
-          listWrap.appendChild(item);
-        });
-        emptyEl.classList.toggle('show', filtered.length === 0);
-      }
-
-      // Render chips
-      function renderChips(){
-        chipsWrap.innerHTML = '';
-        const selected = options.filter(o=>o.selected);
-        selected.forEach(opt=>{
-          const chip = document.createElement('span');
-          chip.className = 'ms-chip';
-          chip.innerHTML = '<span>'+opt.label+'</span>';
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.setAttribute('aria-label','Hapus '+opt.label);
-          btn.innerHTML = '✕';
-          btn.addEventListener('click', ()=>{
-            setSelected(opt.value, false);
-          });
-        chip.appendChild(btn);
-          chipsWrap.appendChild(chip);
-        });
-        placeholder.style.display = selected.length ? 'none':'inline';
-      }
-
-      // Sync ke <select>
-      function syncSelect(){
-        // Clear semua
-        for(const o of selectEl.options){ o.selected = false; }
-        // Set yang dipilih
-        options.forEach((opt, i)=>{
-          if(opt.selected) selectEl.options[i].selected = true;
-        });
-        // Trigger change untuk hitung estimasi
-        const evt = new Event('change', {bubbles:true});
-        selectEl.dispatchEvent(evt);
-      }
-
-      function setSelected(value, state){
-        const opt = options.find(o=>o.value===value);
-        if(!opt) return;
-        opt.selected = !!state;
-        // Update list checkbox
-        const item = listWrap.querySelector('[data-value="'+CSS.escape(value)+'"] input[type="checkbox"]');
-        if(item) item.checked = opt.selected;
-        // Update aria
-        const row = listWrap.querySelector('[data-value="'+CSS.escape(value)+'"]');
-        if(row) row.setAttribute('aria-selected', String(!!state));
-        renderChips();
-        syncSelect();
-      }
-      function toggleValue(value){
-        const opt = options.find(o=>o.value===value);
-        setSelected(value, !opt.selected);
-      }
-
-      function filterList(q){
-        const term = (q||'').trim().toLowerCase();
-        const filtered = term ? options.filter(o=>o.label.toLowerCase().includes(term)) : options;
-        renderList(filtered);
-      }
-
-      // Select all / clear
-      btnSelectAll.addEventListener('click', ()=>{
-        options.forEach(o=>o.selected = true);
-        renderList();
-        renderChips();
-        syncSelect();
-      });
-      btnClear.addEventListener('click', ()=>{
-        options.forEach(o=>o.selected = false);
-        renderList();
-        renderChips();
-        syncSelect();
-      });
-
-      // Open/close handlers
-      msControl.addEventListener('click', (e)=>{
-        if(dropdown.classList.contains('open')) return;
-        openDropdown();
-      });
-      inputInline.addEventListener('focus', ()=>{ if(!dropdown.classList.contains('open')) openDropdown(); });
-      searchDup.addEventListener('input', (e)=> filterList(e.target.value));
-      inputInline.addEventListener('input', (e)=> filterList(e.target.value));
-
-      // Backspace hapus chip terakhir jika input kosong
-      inputInline.addEventListener('keydown', (e)=>{
-        if(e.key === 'Backspace' && !inputInline.value && options.some(o=>o.selected)){
-          const last = [...options].reverse().find(o=>o.selected);
-          if(last) setSelected(last.value, false);
-        }
-        if(e.key === 'ArrowDown'){ e.preventDefault(); openDropdown(); }
-      });
-
-      document.addEventListener('click', (e)=>{
-        if(!msRoot.contains(e.target)) closeDropdown();
-      });
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape') closeDropdown();
-      });
-
-      // Init renders
-      renderList(options);
-      renderChips();
-
-      // Estimasi perubahannya mengikuti select#paket
-      const estimasiDiv = byId('estimasi');
-      function hitungEstimasi(){
-  const selectedValues = Array.from(selectEl.selectedOptions).map(opt=>opt.value.split('|'));
-  let total = 0;
-  let waktu = 0;
-  let list = '';
-  selectedValues.forEach(([nama, harga, durasi])=>{
-    total += parseInt((harga||'').replace(/\D/g, ''), 10) || 0;
-    waktu += parseInt(durasi, 10) || 0;
-    list += '- '+nama+' ('+harga+')\n'; // hanya tampil harga per item, tanpa durasi
-  });
-  if(selectedValues.length){
-    estimasiDiv.innerHTML =
-      '<p><strong>Estimasi Total:</strong> Rp '+ total.toLocaleString('id-ID') +'</p>'+
-      '<p><strong>Estimasi Waktu:</strong> ± '+ waktu +' jam</p>'+
-      '<pre style="margin:0;white-space:pre-wrap">'+list+'</pre>';
-  } else {
-    estimasiDiv.textContent = '';
-  }
-}
-
-      selectEl.addEventListener('change', hitungEstimasi);
-      hitungEstimasi(); // initial
-
-      // Submit ke WhatsApp
-      const form = byId('orderForm');
-      form.addEventListener('submit', (e)=>{
+      form.addEventListener('submit', async (e)=>{
         e.preventDefault();
+
+        const selectEl = document.getElementById('paket');
+        if (!selectEl) return;
 
         // Validasi minimal: wajib pilih paket
         if(selectEl.selectedOptions.length === 0){
@@ -591,21 +836,70 @@
           return;
         }
 
-        const nama = byId('nama').value.trim();
-        const telepon = byId('telepon').value.trim();
-        const alamat = byId('alamat').value.trim();
-        const kelurahan = byId('kelurahan').value.trim();
-        const kecamatan = byId('kecamatan').value.trim();
-        const kota = byId('kota').value.trim();
-        const tanggal = byId('tanggal').value;
-        const pukul = byId('pukul').value;
-        const paket = Array.from(selectEl.selectedOptions).map(opt=>opt.text);
+        // Show loading state
+        submitBtn.disabled = true;
+        submitText.textContent = 'Mengirim...';
+        submitSpinner.style.display = 'inline-block';
 
-        const lokasiLink = (userLat && userLng)
-          ? ('https://www.google.com/maps?q='+userLat+','+userLng)
-          : 'Belum membagikan lokasi';
+        try {
+          const nama = document.getElementById('nama').value.trim();
+          const telepon = document.getElementById('telepon').value.trim();
+          const alamat = document.getElementById('alamat').value.trim();
+          const kelurahan = document.getElementById('kelurahan').value.trim();
+          const kecamatan = document.getElementById('kecamatan').value.trim();
+          const kota = document.getElementById('kota').value.trim();
+          const tanggal = document.getElementById('tanggal').value;
+          const pukul = document.getElementById('pukul').value;
+          
+          const selectedPackages = Array.from(selectEl.selectedOptions).map(opt=>{
+            const [id, nama, harga] = opt.value.split('|');
+            return { id: parseInt(id), nama, harga: parseInt(harga) };
+          });
 
-        const pesan = `
+          const lokasiLink = (userLat && userLng)
+            ? ('https://www.google.com/maps?q='+userLat+','+userLng)
+            : 'Belum membagikan lokasi';
+
+          // 1. Simpan ke database
+          const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .insert([{
+              name: nama,
+              phone: telepon,
+              address: alamat,
+              kelurahan: kelurahan,
+              kecamatan: kecamatan,
+              kota: kota,
+              map_link: lokasiLink,
+              latitude: userLat,
+              longitude: userLng,
+              visit_date: tanggal,
+              visit_time: pukul
+            }])
+            .select()
+            .single();
+
+          if (orderError) throw orderError;
+
+          // 2. Simpan order_packages
+          if (order && selectedPackages.length > 0) {
+            const orderPackages = selectedPackages.map(pkg => ({
+              order_id: order.id,
+              package_id: pkg.id
+            }));
+
+            const { error: pivotError } = await supabase
+              .from('order_packages')
+              .insert(orderPackages);
+
+            if (pivotError) throw pivotError;
+          }
+
+          // 3. Kirim ke WhatsApp
+          const total = selectedPackages.reduce((sum, pkg) => sum + pkg.harga, 0);
+          const packageList = selectedPackages.map(pkg => '- ' + pkg.nama + ' (Rp ' + pkg.harga.toLocaleString('id-ID') + ')').join('\n');
+          
+          const pesan = `
 Mohon di lengkapi data pemesanannya sebagai berikut pak/bu
 
 ———————————
@@ -620,82 +914,58 @@ Kota: ${kota}
 ———————————
 #Waktu Kunjungan#
 ———————————
-Tgl. (yy/mm/dd): ${tanggal}
+Tgl: ${tanggal}
 Pukul: ${pukul}
+———————————
 #Rincian Layanan#
 ———————————
 Item yang dikerjakan & Estimasi Biayanya:
-${paket.map(p => '- ' + p).join('\n')}
+${packageList}
+———————————
+Total: Rp ${total.toLocaleString('id-ID')}
 ———————————
 Lokasi: ${lokasiLink}`.trim();
 
-        const encoded = encodeURIComponent(pesan);
-        const target = '6287887407806';
-        window.open('https://wa.me/'+target+'?text='+encoded, '_blank');
-      });
-    })();
-     let map, marker, userLat, userLng;
+          const encoded = encodeURIComponent(pesan);
+          const target = '6287887407806';
+          window.open('https://wa.me/'+target+'?text='+encoded, '_blank');
 
-window.onload = function() {
-  if (document.getElementById("map")) initMap();
+          // 4. Show success message
+          showToast('Order berhasil dikirim ke WhatsApp dan database!');
+          
+          // 5. Reset form
+          form.reset();
+          options.forEach(opt => opt.selected = false);
+          renderChips();
+          renderList();
+          userLat = null;
+          userLng = null;
+          const lokasiInfo = document.getElementById('lokasiInfo');
+          if (lokasiInfo) lokasiInfo.hidden = true;
+          if (marker && map) map.removeLayer(marker);
 
-  const btnLokasi = document.getElementById("btnLokasi");
-  btnLokasi.addEventListener("click", () => {
-    if (navigator.geolocation) {
-      btnLokasi.innerText = "📍 Mendapatkan lokasi...";
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        userLat = pos.coords.latitude;
-        userLng = pos.coords.longitude;
-
-        // Tampilkan marker di peta
-        if (marker) map.removeLayer(marker);
-        marker = L.marker([userLat, userLng]).addTo(map);
-        map.setView([userLat, userLng], 15);
-
-        btnLokasi.innerText = "✅ Lokasi Berhasil Didapatkan";
-
-        // 🔹 Ambil detail alamat dari Nominatim
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&addressdetails=1`
-          );
-          const data = await response.json();
-
-          if (data && data.address) {
-            const addr = data.address;
-
-            // ✅ Masukkan data ke input form
-            document.getElementById("alamat").value =
-              data.display_name || "Tidak diketahui";
-            document.getElementById("kelurahan").value =
-              addr.suburb || addr.village || addr.hamlet || "";
-            document.getElementById("kecamatan").value =
-              addr.city_district || addr.county || addr.state_district || "";
-            document.getElementById("kota").value =
-              addr.city || addr.town || addr.municipality || addr.state || "";
-
-            console.log("Alamat lengkap:", data.display_name);
-          } else {
-            alert("Gagal membaca data alamat.");
-          }
-        } catch (err) {
-          console.error("Gagal mengambil alamat:", err);
-          alert("Tidak dapat memuat detail alamat.");
+        } catch (error) {
+          console.error('Error submitting order:', error);
+          showToast('Terjadi kesalahan saat menyimpan order', 'error');
+        } finally {
+          // Reset button state
+          submitBtn.disabled = false;
+          submitText.textContent = 'Kirim ke WhatsApp';
+          submitSpinner.style.display = 'none';
         }
-      },
-      () => {
-        alert("Gagal mendapatkan lokasi. Aktifkan GPS dan izinkan akses lokasi.");
-        btnLokasi.innerText = "📍 Dapatkan Lokasi Saya";
-      },
-      { enableHighAccuracy: true, timeout: 10000 });
+      });
     }
-  });
-};
 
-function initMap() {
-  map = L.map("map").setView([-6.2, 106.8], 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-}
+    // Initialize everything when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, initializing...');
+      initMap();
+      loadPackages();
+      initializeLocationButton();
+      initializeFormSubmission();
+      initializeEstimation();
+    });
+
   </script>
 </body>
 </html>
