@@ -63,11 +63,43 @@ const tanggalInput = document.getElementById("tanggal")
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
+  // Hanya load saved order jika ada parameter ?edit=true di URL
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('edit') === 'true') {
+    loadSavedOrder();
+  }
+  
   initMap()
   initDatePicker()
   renderServiceList()
   setupEventListeners()
 })
+
+function loadSavedOrder() {
+  const saved = localStorage.getItem("heloklin_order");
+  if (!saved) return;
+
+  const order = JSON.parse(saved);
+
+  // Isi form
+  document.getElementById("nama").value = order.nama || "";
+  document.getElementById("telepon").value = order.telepon || "";
+  document.getElementById("alamat").value = order.alamat || "";
+  document.getElementById("kelurahan").value = order.kelurahan || "";
+  document.getElementById("kecamatan").value = order.kecamatan || "";
+  document.getElementById("kota").value = order.kota || "";
+  document.getElementById("tanggal").value = order.tanggal || "";
+  document.getElementById("waktu").value = order.waktu || "";
+
+  // Lat long map
+  currentLat = parseFloat(order.latitude) || currentLat;
+  currentLng = parseFloat(order.longitude) || currentLng;
+
+  // Restore layanan
+  selectedServices = order.layanan || [];
+  updateSelectedServicesUI();
+}
+
 
 // Map Initialization
 function initMap() {
@@ -161,6 +193,9 @@ function getCurrentLocation() {
       map.setView([currentLat, currentLng], 17)
       document.getElementById("latitude").value = currentLat
       document.getElementById("longitude").value = currentLng
+
+      // Panggil reverse geocoding untuk mengisi kelurahan, kecamatan, kota
+      reverseGeocode(currentLat, currentLng)
 
       getLocationBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -337,4 +372,76 @@ function handleSubmit(e) {
   // Save to localStorage and redirect to checkout
   localStorage.setItem("heloklin_order", JSON.stringify(formData))
   window.location.href = "checkout.html"
+}
+
+// Function to clear saved order (opsional, bisa dipanggil dari checkout setelah order selesai)
+function clearSavedOrder() {
+  localStorage.removeItem("heloklin_order");
+}
+
+// =======================
+// REVERSE GEOCODING
+// =======================
+function reverseGeocode(lat, lon) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+
+  fetch(url, { headers: { "User-Agent": "heloklin/1.0" } })
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.address) return;
+
+      console.log("Address Result:", data.address);
+      console.log("Display Name:", data.display_name);
+
+      const addr = data.address;
+
+      // Isi Detail Alamat Lengkap
+      const roadName = addr.road || addr.pedestrian || addr.path || "";
+      const houseNumber = addr.house_number || "";
+      const addressParts = [];
+      
+      if (houseNumber) addressParts.push(houseNumber);
+      if (roadName) addressParts.push(roadName);
+      
+      // Tambahkan komponen alamat tambahan jika ada
+      if (addr.hamlet) addressParts.push(addr.hamlet);
+      if (addr.residential) addressParts.push(addr.residential);
+      
+      const detailAlamat = addressParts.join(", ");
+      
+      if (detailAlamat) {
+        document.getElementById("alamat").value = detailAlamat;
+      }
+
+      // Isi Kelurahan
+      document.getElementById("kelurahan").value =
+        addr.village ||
+        addr.suburb ||
+        addr.neighbourhood ||
+        addr.quarter ||
+        addr.hamlet ||
+        "";
+
+      // Isi Kecamatan - diperbaiki dengan lebih banyak fallback
+      document.getElementById("kecamatan").value =
+        addr.subdistrict ||
+        addr.city_district ||
+        addr.district ||
+        addr.borough ||
+        addr.county ||
+        addr.municipality ||
+        "";
+
+      // Isi Kota
+      document.getElementById("kota").value =
+        addr.city ||
+        addr.town ||
+        addr.city_district ||
+        addr.municipality ||
+        addr.state_district ||
+        addr.state ||
+        "";
+
+    })
+    .catch((err) => console.error("Reverse Geocoding Error:", err));
 }
