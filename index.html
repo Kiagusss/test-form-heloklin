@@ -1,971 +1,307 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Form Order Jasa Vakum</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- Include Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    #map {
-      width: 100%;
-      height: 300px;
-      margin-top: 10px;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-    }
-    :root{
-      --color-primary:#10b981;
-      --color-accent:#ef4444;
-      --neutral-900:#111827;
-      --neutral-500:#6b7280;
-      --neutral-100:#f3f4f6;
-      --white:#ffffff;
-      --radius:10px;
-      --shadow:0 6px 20px rgba(0,0,0,.08);
-      --shadow-sm:0 2px 10px rgba(0,0,0,.06);
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background: var(--neutral-100);
-      color: var(--neutral-900);
-      line-height: 1.55;
-    }
-
-    .container {
-      max-width: 720px;
-      margin: 32px auto;
-      padding: 24px;
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
-
-    h2 { margin: 0 0 8px; }
-    h3 { margin: 20px 0 8px; }
-
-    label {
-      display:block;
-      margin-top: 14px;
-      font-weight: 600;
-    }
-    input[type="text"],
-    input[type="date"],
-    input[type="time"],
-    textarea,
-    select {
-      width:100%;
-      padding: 10px 12px;
-      border:1px solid #E5E7EB;
-      border-radius: 8px;
-      background: var(--white);
-      outline: none;
-      transition: box-shadow .2s, border-color .2s;
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: var(--primary-300, #6ee7b7);
-      box-shadow: 0 0 0 4px rgba(16,185,129,.15);
-    }
-    textarea { min-height: 100px; resize: vertical; }
-
-    .btn {
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      width:100%;
-      margin-top: 16px;
-      background: var(--color-primary);
-      color: var(--white);
-      padding: 12px 14px;
-      border:0;
-      border-radius: 10px;
-      cursor:pointer;
-      font-weight: 600;
-      box-shadow: var(--shadow-sm);
-      transition: transform .05s ease, filter .2s ease;
-    }
-    .btn:hover { filter: brightness(.98); }
-    .btn:active { transform: translateY(1px); }
-    .btn-secondary{
-      width:auto;
-      background:#059669;
-    }
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    hr {
-      border:0;
-      height:1px;
-      background:#e5e7eb;
-      margin: 20px 0;
-    }
-
-    /* Estimasi box */
-    #estimasi{
-      margin-top: 10px;
-      background: #f0fdf4;
-      border: 1px solid #dcfce7;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      white-space: pre-wrap;
-    }
-    #estimasi p { margin: 0 0 6px; }
-
-    /* Loading spinner */
-    .spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ffffff;
-      border-radius: 50%;
-      border-top-color: transparent;
-      animation: spin 1s ease-in-out infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Toast notification */
-    .toast {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 20px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 500;
-      z-index: 1000;
-      transform: translateX(400px);
-      transition: transform 0.3s ease;
-    }
-    .toast.show {
-      transform: translateX(0);
-    }
-    .toast.success {
-      background: #10b981;
-    }
-    .toast.error {
-      background: #ef4444;
-    }
-
-    /* Native select disembunyikan tapi tetap ada untuk validasi/submit */
-    .visually-hidden {
-      position: absolute !important;
-      left: -9999px !important;
-      width: 1px; height: 1px;
-      overflow: hidden;
-    }
-
-    /* Multi Select kustom */
-    .ms {
-      position: relative;
-      margin-top: 8px;
-    }
-    .ms-control {
-      min-height: 44px;
-      padding: 6px 8px;
-      border: 1px solid #E5E7EB;
-      border-radius: 10px;
-      display:flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-      cursor: text;
-      background: var(--white);
-      transition: box-shadow .2s, border-color .2s;
-    }
-    .ms-control.is-open {
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 4px rgba(16,185,129,.15);
-    }
-    .ms-placeholder {
-      color: var(--neutral-500);
-      font-size: 14px;
-      padding: 6px 4px;
-      user-select: none;
-    }
-    .ms-chips {
-      display:flex;
-      flex-wrap: wrap;
-      gap:6px;
-      align-items:center;
-      flex: 1 1 auto;
-    }
-    .ms-chip {
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #ecfeff;
-      border: 1px solid #cffafe;
-      color: #0369a1;
-      font-size: 13px;
-      line-height: 1;
-      white-space: nowrap;
-    }
-    .ms-chip button {
-      border:0;
-      background: transparent;
-      color: var(--neutral-500);
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      display:flex;
-      align-items:center;
-    }
-    .ms-input {
-      flex: 1 1 160px;
-      min-width: 120px;
-      border:0;
-      outline: none;
-      font-size: 14px;
-      padding: 6px 4px;
-    }
-
-    .ms-dropdown {
-      position:absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      right: 0;
-      background: var(--white);
-      border: 1px solid #E5E7EB;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      z-index: 20;
-      display:none;
-    }
-    .ms-dropdown.open { display:block; }
-    .ms-search {
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding: 10px;
-      border-bottom:1px solid #F3F4F6;
-    }
-    .ms-search input{
-      width:100%;
-      border:1px solid #E5E7EB;
-      border-radius: 8px;
-      padding: 8px 10px;
-      outline: none;
-      font-size: 14px;
-    }
-    .ms-actions {
-      display:flex;
-      justify-content: space-between;
-      align-items:center;
-      padding: 8px 10px;
-      border-bottom:1px solid #F3F4F6;
-      gap:8px;
-    }
-    .ms-actions .link {
-      background: transparent;
-      color: var(--color-primary);
-      border:0;
-      padding: 6px 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .ms-list {
-      max-height: 220px;
-      overflow:auto;
-      padding: 6px 4px;
-    }
-    .ms-item {
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding: 8px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .ms-item:hover { background: #f9fafb; }
-    .ms-item input { pointer-events: none; }
-    .ms-empty {
-      padding: 12px;
-      color: var(--neutral-500);
-      text-align: center;
-      font-size: 14px;
-      display:none;
-    }
-    .ms-empty.show { display:block; }
-
-    /* Info lokasi */
-    .info-box {
-      margin-top: 10px;
-      background:#f3f4f6;
-      border:1px solid #e5e7eb;
-      padding:10px;
-      border-radius:8px;
-      font-size: 14px;
-    }
-
-    @media (max-width: 640px){
-      .container{ margin: 16px; padding: 16px; }
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Jasa Vacuum - Heloklin</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <h2>Form Pemesanan Jasa Vakum</h2>
-
-    <form id="orderForm" novalidate>
-      <label for="nama">Nama:</label>
-      <input type="text" id="nama" required>
-
-      <label for="telepon">No. Tlp:</label>
-      <input type="text" id="telepon" required>
-
-      <h3>Share Lokasi Anda</h3>
-      <button type="button" id="btnLokasi" class="btn btn-secondary">📍 Dapatkan Lokasi Saya</button>
-      <div id="map"></div>
-      <div id="lokasiInfo" class="info-box" aria-live="polite" hidden></div>
-
-      <label for="alamat">Alamat Lengkap:</label>
-      <textarea id="alamat" required placeholder="Tolong isi alamat lengkap anda disini"></textarea>
-
-      <label for="kelurahan">Kelurahan:</label>
-      <input type="text" id="kelurahan" required>
-
-      <label for="kecamatan">Kecamatan:</label>
-      <input type="text" id="kecamatan" required>
-
-      <label for="kota">Kota:</label>
-      <input type="text" id="kota" required>
-
-      <hr>
-      <h3>#Waktu Kunjungan#</h3>
-      <label for="tanggal">Tanggal (dd/mm/yy):</label>
-      <input type="date" id="tanggal" required>
-
-      <label for="pukul">Pukul:</label>
-      <input type="time" id="pukul" required>
-
-      <hr>
-      <h3>#Rincian Layanan#</h3>
-
-      <label for="paket">Pilih Paket Anda:</label>
-
-      <!-- Hidden select untuk packages dari database -->
-      <select id="paket" class="visually-hidden" multiple required>
-        <!-- Options akan diisi oleh JavaScript dari database -->
-      </select>
-
-      *Bisa pilih lebih dari satu paket
-      <div class="ms" id="paket-ms">
-        <div class="ms-control" role="combobox" aria-expanded="false" aria-owns="paket-list" aria-haspopup="listbox">
-          <div class="ms-chips" id="paket-chips"></div>
-          <input class="ms-input" id="paket-search" type="text" placeholder="Cari & pilih paket..." aria-autocomplete="list" aria-controls="paket-list" />
-          <span class="ms-placeholder" id="paket-placeholder">Pilih satu atau lebih paket</span>
-        </div>
-        <div class="ms-dropdown" id="paket-dropdown" role="listbox" aria-multiselectable="true">
-          <div class="ms-search">
-            <input type="text" id="paket-search-dup" placeholder="Ketik untuk mencari paket..." aria-label="Cari paket">
+  <main class="main-container">
+    <div class="form-wrapper">
+      <!-- Header -->
+      <div class="form-header">
+        <div class="logo-container">
+          <div class="logo-icon">
+           <img src="heloklin-logo.png" alt="" width="80px" height="80px" style="border-radius: 10px;">
           </div>
-          <div class="ms-actions">
-            <button type="button" class="link" id="paket-select-all">Pilih semua</button>
-            <button type="button" class="link" id="paket-clear">Hapus semua</button>
+          <div>
+            <h1 class="logo-title">heloklin</h1>
+            <p class="logo-subtitle">Professional Cleaning Service</p>
           </div>
-          <div class="ms-list" id="paket-list"></div>
-          <div class="ms-empty" id="paket-empty">Tidak ada hasil</div>
         </div>
+        <p class="header-desc">Isi form di bawah ini untuk memesan jasa vacuum cleaning profesional kami</p>
       </div>
 
-      <div id="estimasi" aria-live="polite"></div>
+      <!-- Form -->
+      <form id="orderForm" class="order-form">
+        <!-- Data Diri -->
+        <div class="form-section">
+          <h2 class="section-title">
+            <span class="section-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            Data Diri
+          </h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="nama">Nama Lengkap</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </span>
+                <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="telepon">No. Telepon</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                </span>
+                <input type="tel" id="telepon" name="telepon" placeholder="08xxxxxxxxxx" required>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <hr>
+        <!-- Lokasi -->
+        <div class="form-section">
+          <h2 class="section-title">
+            <span class="section-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </span>
+            Lokasi
+          </h2>
+          
+          <!-- Map Container -->
+          <div class="map-container">
+            <div id="map" class="map"></div>
+            <div class="map-marker">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="#2563eb" stroke="#1e40af" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3" fill="white"></circle>
+              </svg>
+            </div>
+            <button type="button" id="getLocationBtn" class="location-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v2m0 16v2M2 12h2m16 0h2"></path>
+              </svg>
+              Lokasi Saat Ini
+            </button>
+          </div>
+          <p class="map-hint">Geser peta untuk menentukan lokasi atau gunakan tombol "Lokasi Saat Ini"</p>
+          <input type="hidden" id="latitude" name="latitude">
+          <input type="hidden" id="longitude" name="longitude">
 
-      <button type="submit" class="btn" id="submitBtn">
-        <span id="submitText">Kirim ke WhatsApp</span>
-        <div id="submitSpinner" class="spinner" style="display: none;"></div>
-      </button>
-    </form>
+          <!-- Alamat Detail -->
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="alamat">Detail Alamat Lengkap</label>
+            <textarea id="alamat" name="alamat" placeholder="Nama jalan, nomor rumah, patokan, dll" required></textarea>
+          </div>
+          <div class="form-grid form-grid-3">
+
+  <!-- Kelurahan -->
+  <div class="form-group">
+    <label for="kelurahan">Kelurahan</label>
+    <div class="input-wrapper">
+      <span class="input-icon">
+        <!-- building icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
+          <path d="M9 21V9h6v12"></path>
+          <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
+          <path d="M3 21h18"></path>
+        </svg>
+      </span>
+      <input type="text" id="kelurahan" name="kelurahan" placeholder="Kelurahan" required>
+    </div>
   </div>
 
-  <script>
-    // Konfigurasi Supabase - GANTI DENGAN KONFIGURASI ANDA
- const SUPABASE_URL = 'https://pxiiqlyajgoeocyjfjji.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aWlxbHlhamdvZW9jeWpmamppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMjQ1NTAsImV4cCI6MjA3NTkwMDU1MH0.9PC9a-LA5MR6p7sibIbcGGQyEiSKpXPAycV0vOO83AE';
-    
-    // Inisialisasi Supabase
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <!-- Kecamatan -->
+  <div class="form-group">
+    <label for="kecamatan">Kecamatan</label>
+    <div class="input-wrapper">
+      <span class="input-icon">
+        <!-- building icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
+          <path d="M9 21V9h6v12"></path>
+          <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
+          <path d="M3 21h18"></path>
+        </svg>
+      </span>
+      <input type="text" id="kecamatan" name="kecamatan" placeholder="Kecamatan" required>
+    </div>
+  </div>
 
-    // Global variables
-    let map, marker, userLat, userLng;
+  <!-- Kota -->
+  <div class="form-group">
+    <label for="kota">Kota</label>
+    <div class="input-wrapper">
+      <span class="input-icon">
+        <!-- building icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
+          <path d="M9 21V9h6v12"></path>
+          <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
+          <path d="M3 21h18"></path>
+        </svg>
+      </span>
+      <input type="text" id="kota" name="kota" placeholder="Kota" required>
+    </div>
+  </div>
 
-    // Toast notification function
-    function showToast(message, type = 'success') {
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      
-      setTimeout(() => toast.classList.add('show'), 100);
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
+</div>
 
-    // Initialize map
-    function initMap() {
-      const mapElement = document.getElementById('map');
-      if (!mapElement) {
-        console.error('Map element not found');
-        return;
-      }
+        </div>
 
-      try {
-        map = L.map('map').setView([-6.2, 106.8], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        console.log('Map initialized successfully');
-      } catch (error) {
-        console.error('Error initializing map:', error);
-      }
-    }
+        <!-- Jadwal Kunjungan -->
+        <div class="form-section">
+          <h2 class="section-title">
+            <span class="section-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </span>
+            Jadwal Kunjungan
+          </h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="tanggal">Tanggal Kunjungan</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </span>
+                <input type="date" id="tanggal" name="tanggal" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="waktu">Waktu Kunjungan</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </span>
+                <select id="waktu" name="waktu" required>
+                  <option value="">Pilih waktu</option>
+                  <option value="08:00 - 10:00">08:00 - 10:00</option>
+                  <option value="10:00 - 12:00">10:00 - 12:00</option>
+                  <option value="13:00 - 15:00">13:00 - 15:00</option>
+                  <option value="15:00 - 17:00">15:00 - 17:00</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    // Ambil data packages dari database - HANYA dari tabel package
-    async function loadPackages() {
-      try {
-        console.log('Loading packages from database...');
-        
-        const { data: packages, error } = await supabase
-          .from('package')
-          .select('*')
-          .order('price', { ascending: true });
-
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
-
-        console.log('Packages loaded:', packages);
-
-        const selectEl = document.getElementById('paket');
-        if (!selectEl) {
-          console.error('Package select element not found');
-          return;
-        }
-
-        selectEl.innerHTML = '';
-        
-        if (packages && packages.length > 0) {
-          packages.forEach(pkg => {
-            const option = document.createElement('option');
-            option.value = `${pkg.id}|${pkg.name}|${pkg.price}`;
-            option.textContent = `${pkg.name} - Rp ${pkg.price.toLocaleString('id-ID')}`;
-            selectEl.appendChild(option);
-          });
+        <!-- Rincian Layanan -->
+        <div class="form-section">
+          <h2 class="section-title">
+            <span class="section-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </span>
+            Rincian Layanan
+          </h2>
           
-          console.log('Packages added to select:', packages.length);
-          
-          // Re-initialize multi-select dengan data baru
-          initializeMultiSelect();
-        } else {
-          console.warn('No packages found in database');
-          showToast('Tidak ada paket tersedia', 'error');
-        }
-      } catch (error) {
-        console.error('Error loading packages:', error);
-        showToast('Gagal memuat data paket dari database', 'error');
-        
-        // Fallback: tampilkan paket default jika database error
-        loadDefaultPackages();
-      }
-    }
+          <button type="button" id="openServiceModal" class="service-trigger-btn">
+            <span class="btn-content">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              Pilih Layanan
+            </span>
+            <span class="btn-badge" id="serviceCount">0</span>
+          </button>
 
-    // Fallback function jika database tidak bisa diakses
-    function loadDefaultPackages() {
-      const selectEl = document.getElementById('paket');
-      if (!selectEl) return;
+          <!-- Selected Services -->
+          <div id="selectedServices" class="selected-services"></div>
 
-      const defaultPackages = [
-        { id: 1, name: 'Package Basic', price: 150000 },
-        { id: 2, name: 'Package Standard', price: 250000 },
-        { id: 3, name: 'Package Ultimate 1', price: 400000 },
-        { id: 4, name: 'Package Ultimate 2', price: 600000 }
-      ];
+          <!-- Total -->
+          <div id="totalContainer" class="total-container" style="display: none;">
+            <div class="total-label">Total Estimasi</div>
+            <div class="total-amount" id="totalAmount">Rp 0</div>
+          </div>
+        </div>
 
-      selectEl.innerHTML = '';
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          Lanjut ke Checkout
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- Service Modal -->
+  <div id="serviceModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Pilih Layanan</h2>
+        <button type="button" id="closeModal" class="modal-close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
       
-      defaultPackages.forEach(pkg => {
-        const option = document.createElement('option');
-        option.value = `${pkg.id}|${pkg.name}|${pkg.price}`;
-        option.textContent = `${pkg.name} - Rp ${pkg.price.toLocaleString('id-ID')}`;
-        selectEl.appendChild(option);
-      });
+      <div class="modal-search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="serviceSearch" placeholder="Cari layanan...">
+      </div>
 
-      console.log('Loaded default packages');
-      initializeMultiSelect();
-    }
+      <div class="modal-body" id="serviceList"
+        <!-- Services will be populated by JavaScript -->
+      </div>
 
-    // MultiSelect Kustom untuk #paket
-    let selectEl, msRoot, msControl, chipsWrap, inputInline, dropdown, listWrap, emptyEl, searchDup, btnSelectAll, btnClear, placeholder;
-    let options = [];
+      <div class="modal-footer">
+        <button type="button" id="clearAllServices" class="clear-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Hapus Semua
+        </button>
+        <button type="button" id="confirmServices" class="confirm-btn">
+          Konfirmasi Pilihan
+        </button>
+      </div>
+    </div>
+  </div>
 
-    function initializeMultiSelect() {
-      selectEl = document.getElementById('paket');
-      msRoot = document.getElementById('paket-ms');
-      
-      if (!selectEl || !msRoot) {
-        console.error('Multi-select elements not found');
-        return;
-      }
-
-      msControl = msRoot.querySelector('.ms-control');
-      chipsWrap = document.getElementById('paket-chips');
-      inputInline = document.getElementById('paket-search');
-      dropdown = document.getElementById('paket-dropdown');
-      listWrap = document.getElementById('paket-list');
-      emptyEl = document.getElementById('paket-empty');
-      searchDup = document.getElementById('paket-search-dup');
-      btnSelectAll = document.getElementById('paket-select-all');
-      btnClear = document.getElementById('paket-clear');
-      placeholder = document.getElementById('paket-placeholder');
-
-      // Pastikan semua elemen ada
-      if (!msControl || !chipsWrap || !inputInline || !dropdown || !listWrap || !emptyEl || !searchDup || !btnSelectAll || !btnClear || !placeholder) {
-        console.error('Some multi-select elements are missing');
-        return;
-      }
-
-      options = Array.from(selectEl.options).map((o, idx)=>({
-        label: o.text,
-        value: o.value,
-        selected: o.selected,
-        idx
-      }));
-
-      // Re-initialize semua event listeners
-      initMultiSelectEvents();
-      renderList(options);
-      renderChips();
-      
-      console.log('Multi-select initialized with', options.length, 'packages');
-    }
-
-    function openDropdown(){
-      dropdown.classList.add('open');
-      msControl.classList.add('is-open');
-      msControl.setAttribute('aria-expanded', 'true');
-      searchDup.value = inputInline.value;
-      searchDup.focus();
-      filterList(searchDup.value);
-    }
-    
-    function closeDropdown(){
-      dropdown.classList.remove('open');
-      msControl.classList.remove('is-open');
-      msControl.setAttribute('aria-expanded', 'false');
-    }
-
-    // Render list options
-    function renderList(filtered = options){
-      if (!listWrap) return;
-      
-      listWrap.innerHTML = '';
-      filtered.forEach(opt=>{
-        const item = document.createElement('div');
-        item.className = 'ms-item';
-        item.setAttribute('role','option');
-        item.setAttribute('aria-selected', String(!!opt.selected));
-        item.dataset.value = opt.value;
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = !!opt.selected;
-        cb.tabIndex = -1;
-
-        const label = document.createElement('span');
-        label.textContent = opt.label;
-
-        item.appendChild(cb);
-        item.appendChild(label);
-        item.addEventListener('click', ()=>{
-          toggleValue(opt.value);
-        });
-
-        listWrap.appendChild(item);
-      });
-      emptyEl.classList.toggle('show', filtered.length === 0);
-    }
-
-    // Render chips
-    function renderChips(){
-      if (!chipsWrap) return;
-      
-      chipsWrap.innerHTML = '';
-      const selected = options.filter(o=>o.selected);
-      selected.forEach(opt=>{
-        const chip = document.createElement('span');
-        chip.className = 'ms-chip';
-        chip.innerHTML = '<span>'+opt.label+'</span>';
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.setAttribute('aria-label','Hapus '+opt.label);
-        btn.innerHTML = '✕';
-        btn.addEventListener('click', ()=>{
-          setSelected(opt.value, false);
-        });
-        chip.appendChild(btn);
-        chipsWrap.appendChild(chip);
-      });
-      if (placeholder) {
-        placeholder.style.display = selected.length ? 'none':'inline';
-      }
-    }
-
-    // Sync ke <select>
-    function syncSelect(){
-      if (!selectEl) return;
-      
-      for(const o of selectEl.options){ o.selected = false; }
-      options.forEach((opt, i)=>{
-        if(opt.selected) selectEl.options[i].selected = true;
-      });
-      const evt = new Event('change', {bubbles:true});
-      selectEl.dispatchEvent(evt);
-    }
-
-    function setSelected(value, state){
-      const opt = options.find(o=>o.value===value);
-      if(!opt) return;
-      opt.selected = !!state;
-      const item = listWrap?.querySelector('[data-value="'+CSS.escape(value)+'"] input[type="checkbox"]');
-      if(item) item.checked = opt.selected;
-      const row = listWrap?.querySelector('[data-value="'+CSS.escape(value)+'"]');
-      if(row) row.setAttribute('aria-selected', String(!!state));
-      renderChips();
-      syncSelect();
-    }
-    
-    function toggleValue(value){
-      const opt = options.find(o=>o.value===value);
-      setSelected(value, !opt.selected);
-    }
-
-    function filterList(q){
-      const term = (q||'').trim().toLowerCase();
-      const filtered = term ? options.filter(o=>o.label.toLowerCase().includes(term)) : options;
-      renderList(filtered);
-    }
-
-    function initMultiSelectEvents() {
-      // Select all / clear
-      if (btnSelectAll) {
-        btnSelectAll.addEventListener('click', ()=>{
-          options.forEach(o=>o.selected = true);
-          renderList();
-          renderChips();
-          syncSelect();
-        });
-      }
-      
-      if (btnClear) {
-        btnClear.addEventListener('click', ()=>{
-          options.forEach(o=>o.selected = false);
-          renderList();
-          renderChips();
-          syncSelect();
-        });
-      }
-
-      // Open/close handlers
-      if (msControl) {
-        msControl.addEventListener('click', (e)=>{
-          if(dropdown.classList.contains('open')) return;
-          openDropdown();
-        });
-      }
-      
-      if (inputInline) {
-        inputInline.addEventListener('focus', ()=>{ if(!dropdown.classList.contains('open')) openDropdown(); });
-        inputInline.addEventListener('input', (e)=> filterList(e.target.value));
-      }
-
-      if (searchDup) {
-        searchDup.addEventListener('input', (e)=> filterList(e.target.value));
-      }
-
-      // Backspace hapus chip terakhir jika input kosong
-      if (inputInline) {
-        inputInline.addEventListener('keydown', (e)=>{
-          if(e.key === 'Backspace' && !inputInline.value && options.some(o=>o.selected)){
-            const last = [...options].reverse().find(o=>o.selected);
-            if(last) setSelected(last.value, false);
-          }
-          if(e.key === 'ArrowDown'){ e.preventDefault(); openDropdown(); }
-        });
-      }
-
-      document.addEventListener('click', (e)=>{
-        if(!msRoot?.contains(e.target)) closeDropdown();
-      });
-      
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape') closeDropdown();
-      });
-    }
-
-    // Estimasi perubahannya mengikuti select#paket
-    function initializeEstimation() {
-      const estimasiDiv = document.getElementById('estimasi');
-      const selectEl = document.getElementById('paket');
-      
-      if (!estimasiDiv || !selectEl) return;
-
-      function hitungEstimasi(){
-        const selectedValues = Array.from(selectEl.selectedOptions).map(opt=>{
-          const [id, nama, harga] = opt.value.split('|');
-          return { id, nama, harga: parseInt(harga) };
-        });
-        
-        let total = 0;
-        let list = '';
-        selectedValues.forEach(({nama, harga})=>{
-          total += harga || 0;
-          list += '- '+nama+' (Rp '+ harga.toLocaleString('id-ID') +')\n';
-        });
-        
-        if(selectedValues.length){
-          estimasiDiv.innerHTML =
-            '<p><strong>Estimasi Total:</strong> Rp '+ total.toLocaleString('id-ID') +'</p>'+
-            '<pre style="margin:0;white-space:pre-wrap">'+list+'</pre>';
-        } else {
-          estimasiDiv.textContent = '';
-        }
-      }
-
-      selectEl.addEventListener('change', hitungEstimasi);
-    }
-
-    // Initialize location button
-    function initializeLocationButton() {
-      const btnLokasi = document.getElementById('btnLokasi');
-      const lokasiInfo = document.getElementById('lokasiInfo');
-      
-      if (!btnLokasi || !lokasiInfo) return;
-
-      btnLokasi.addEventListener('click', async ()=>{
-        if(!navigator.geolocation){
-          alert('Browser Anda tidak mendukung geolocation.');
-          return;
-        }
-        btnLokasi.disabled = true;
-        const prev = btnLokasi.textContent;
-        btnLokasi.textContent = '📍 Mendapatkan lokasi...';
-        
-        navigator.geolocation.getCurrentPosition(async (pos)=>{
-          userLat = pos.coords.latitude;
-          userLng = pos.coords.longitude;
-          
-          // Tampilkan marker di peta
-          if (marker && map) {
-            map.removeLayer(marker);
-          }
-          if (map) {
-            marker = L.marker([userLat, userLng]).addTo(map);
-            map.setView([userLat, userLng], 15);
-          }
-
-          lokasiInfo.hidden = false;
-          lokasiInfo.innerHTML = '<strong>📍 Koordinat Anda:</strong><br>' +
-            'Lat: '+userLat.toFixed(6)+', Lng: '+userLng.toFixed(6) +
-            '<br><a target="_blank" href="https://www.google.com/maps?q='+userLat+','+userLng+'">Lihat di Google Maps</a>';
-          btnLokasi.textContent = '✅ Lokasi Berhasil Didapatkan';
-          btnLokasi.disabled = false;
-
-          // Ambil alamat dari koordinat
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&addressdetails=1`
-            );
-            const data = await response.json();
-
-            if (data && data.address) {
-              const addr = data.address;
-              document.getElementById("alamat").value = data.display_name || "Tidak diketahui";
-              document.getElementById("kelurahan").value = addr.suburb || addr.village || addr.hamlet || "";
-              document.getElementById("kecamatan").value = addr.city_district || addr.county || addr.state_district || "";
-              document.getElementById("kota").value = addr.city || addr.town || addr.municipality || addr.state || "";
-            }
-          } catch (err) {
-            console.error("Gagal mengambil alamat:", err);
-          }
-        },()=>{
-          alert('Gagal mendapatkan lokasi. Aktifkan GPS dan izinkan akses lokasi.');
-          btnLokasi.textContent = prev;
-          btnLokasi.disabled = false;
-        },{enableHighAccuracy:true, timeout:10000});
-      });
-    }
-
-    // Initialize form submission
-    function initializeFormSubmission() {
-      const form = document.getElementById('orderForm');
-      const submitBtn = document.getElementById('submitBtn');
-      const submitText = document.getElementById('submitText');
-      const submitSpinner = document.getElementById('submitSpinner');
-      
-      if (!form || !submitBtn || !submitText || !submitSpinner) return;
-
-      form.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-
-        const selectEl = document.getElementById('paket');
-        if (!selectEl) return;
-
-        // Validasi minimal: wajib pilih paket
-        if(selectEl.selectedOptions.length === 0){
-          alert('Silakan pilih minimal satu paket.');
-          openDropdown();
-          return;
-        }
-
-        // Show loading state
-        submitBtn.disabled = true;
-        submitText.textContent = 'Mengirim...';
-        submitSpinner.style.display = 'inline-block';
-
-        try {
-          const nama = document.getElementById('nama').value.trim();
-          const telepon = document.getElementById('telepon').value.trim();
-          const alamat = document.getElementById('alamat').value.trim();
-          const kelurahan = document.getElementById('kelurahan').value.trim();
-          const kecamatan = document.getElementById('kecamatan').value.trim();
-          const kota = document.getElementById('kota').value.trim();
-          const tanggal = document.getElementById('tanggal').value;
-          const pukul = document.getElementById('pukul').value;
-          
-          const selectedPackages = Array.from(selectEl.selectedOptions).map(opt=>{
-            const [id, nama, harga] = opt.value.split('|');
-            return { id: parseInt(id), nama, harga: parseInt(harga) };
-          });
-
-          const lokasiLink = (userLat && userLng)
-            ? ('https://www.google.com/maps?q='+userLat+','+userLng)
-            : 'Belum membagikan lokasi';
-
-          // 1. Simpan ke database
-          const { data: order, error: orderError } = await supabase
-            .from('orders')
-            .insert([{
-              name: nama,
-              phone: telepon,
-              address: alamat,
-              kelurahan: kelurahan,
-              kecamatan: kecamatan,
-              kota: kota,
-              map_link: lokasiLink,
-              latitude: userLat,
-              longitude: userLng,
-              visit_date: tanggal,
-              visit_time: pukul
-            }])
-            .select()
-            .single();
-
-          if (orderError) throw orderError;
-
-          // 2. Simpan order_packages
-          if (order && selectedPackages.length > 0) {
-            const orderPackages = selectedPackages.map(pkg => ({
-              order_id: order.id,
-              package_id: pkg.id
-            }));
-
-            const { error: pivotError } = await supabase
-              .from('order_packages')
-              .insert(orderPackages);
-
-            if (pivotError) throw pivotError;
-          }
-
-          // 3. Kirim ke WhatsApp
-          const total = selectedPackages.reduce((sum, pkg) => sum + pkg.harga, 0);
-          const packageList = selectedPackages.map(pkg => '- ' + pkg.nama + ' (Rp ' + pkg.harga.toLocaleString('id-ID') + ')').join('\n');
-          
-          const pesan = `
-Mohon di lengkapi data pemesanannya sebagai berikut pak/bu
-
-———————————
-#Pemesan#
-———————————
-Nama: ${nama}
-No.Tlp: ${telepon}
-Alamat: ${alamat}
-Kelurahan: ${kelurahan}
-Kecamatan: ${kecamatan}
-Kota: ${kota}
-———————————
-#Waktu Kunjungan#
-———————————
-Tgl: ${tanggal}
-Pukul: ${pukul}
-———————————
-#Rincian Layanan#
-———————————
-Item yang dikerjakan & Estimasi Biayanya:
-${packageList}
-———————————
-Total: Rp ${total.toLocaleString('id-ID')}
-———————————
-Lokasi: ${lokasiLink}`.trim();
-
-          const encoded = encodeURIComponent(pesan);
-          const target = '6287887407806';
-          window.open('https://wa.me/'+target+'?text='+encoded, '_blank');
-
-          // 4. Show success message
-          showToast('Order berhasil dikirim ke WhatsApp dan database!');
-          
-          // 5. Reset form
-          form.reset();
-          options.forEach(opt => opt.selected = false);
-          renderChips();
-          renderList();
-          userLat = null;
-          userLng = null;
-          const lokasiInfo = document.getElementById('lokasiInfo');
-          if (lokasiInfo) lokasiInfo.hidden = true;
-          if (marker && map) map.removeLayer(marker);
-
-        } catch (error) {
-          console.error('Error submitting order:', error);
-          showToast('Terjadi kesalahan saat menyimpan order', 'error');
-        } finally {
-          // Reset button state
-          submitBtn.disabled = false;
-          submitText.textContent = 'Kirim ke WhatsApp';
-          submitSpinner.style.display = 'none';
-        }
-      });
-    }
-
-    // Initialize everything when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM loaded, initializing...');
-      initMap();
-      loadPackages();
-      initializeLocationButton();
-      initializeFormSubmission();
-      initializeEstimation();
-    });
-
-  </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
