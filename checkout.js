@@ -41,6 +41,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("checkoutTanggal").textContent = formatDate(order.tanggal)
   document.getElementById("checkoutWaktu").textContent = order.waktu
   document.getElementById("checkoutTotal").textContent = formatCurrency(order.total)
+  // Estimated time
+  const formatMinutes = (m) => {
+    const h = Math.floor(m / 60)
+    const min = m % 60
+    if (h > 0 && min > 0) return `${h} jam ${min} menit`
+    if (h > 0) return `${h} jam`
+    return `${min} menit`
+  }
+  document.getElementById("checkoutEstimasi").textContent = formatMinutes(order.totalEstimatedMinutes || 0)
 
   // Render services
   const servicesContainer = document.getElementById("checkoutServices")

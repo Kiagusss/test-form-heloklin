@@ -344,6 +344,10 @@
               <div class="text-sm opacity-90">Diskon (<span id="discountLabel"></span>)</div>
               <div class="text-base font-semibold text-green-300" id="discountAmount">- Rp 0</div>
             </div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm opacity-90">Estimasi Waktu Pengerjaan</div>
+              <div class="text-base font-semibold" id="estimatedTime">0 menit</div>
+            </div>
             <div class="flex items-center justify-between pt-2">
               <div class="text-base font-semibold">Total Estimasi Biaya</div>
               <div class="text-2xl font-bold" id="totalAmount">Rp 0</div>
@@ -438,38 +442,38 @@
       helosleep: {
         name: "HELOSLEEP",
         items: [
-          { id: "hs1", name: "Kasur Single", price: 75000 },
-          { id: "hs2", name: "Kasur Double", price: 100000 },
-          { id: "hs3", name: "Kasur King Size", price: 125000 },
-          { id: "hs4", name: "Bantal", price: 25000 },
-          { id: "hs5", name: "Guling", price: 30000 },
-          { id: "hs6", name: "Selimut", price: 35000 },
-          { id: "hs7", name: "Bed Cover", price: 50000 },
-          { id: "hs8", name: "Topper", price: 60000 },
+          { id: "hs1", name: "Kasur Single", price: 75000, duration: 30 },
+          { id: "hs2", name: "Kasur Double", price: 100000, duration: 45 },
+          { id: "hs3", name: "Kasur King Size", price: 125000, duration: 60 },
+          { id: "hs4", name: "Bantal", price: 25000, duration: 10 },
+          { id: "hs5", name: "Guling", price: 30000, duration: 10 },
+          { id: "hs6", name: "Selimut", price: 35000, duration: 15 },
+          { id: "hs7", name: "Bed Cover", price: 50000, duration: 20 },
+          { id: "hs8", name: "Topper", price: 60000, duration: 25 },
         ],
       },
       heloliving: {
         name: "HELOLIVING",
         items: [
-          { id: "hl1", name: "Sofa 1 Seater", price: 75000 },
-          { id: "hl2", name: "Sofa 2 Seater", price: 125000 },
-          { id: "hl3", name: "Sofa 3 Seater", price: 175000 },
-          { id: "hl4", name: "Sofa L Shape", price: 250000 },
-          { id: "hl5", name: "Kursi Makan", price: 40000 },
-          { id: "hl6", name: "Karpet Kecil", price: 50000 },
-          { id: "hl7", name: "Karpet Sedang", price: 100000 },
-          { id: "hl8", name: "Karpet Besar", price: 150000 },
+          { id: "hl1", name: "Sofa 1 Seater", price: 75000, duration: 30 },
+          { id: "hl2", name: "Sofa 2 Seater", price: 125000, duration: 45 },
+          { id: "hl3", name: "Sofa 3 Seater", price: 175000, duration: 60 },
+          { id: "hl4", name: "Sofa L Shape", price: 250000, duration: 90 },
+          { id: "hl5", name: "Kursi Makan", price: 40000, duration: 15 },
+          { id: "hl6", name: "Karpet Kecil", price: 50000, duration: 25 },
+          { id: "hl7", name: "Karpet Sedang", price: 100000, duration: 45 },
+          { id: "hl8", name: "Karpet Besar", price: 150000, duration: 60 },
         ],
       },
       helobaby: {
         name: "HELOBABY",
         items: [
-          { id: "hb1", name: "Stroller", price: 100000 },
-          { id: "hb2", name: "Car Seat", price: 85000 },
-          { id: "hb3", name: "Baby Bouncer", price: 75000 },
-          { id: "hb4", name: "Baby Crib", price: 125000 },
-          { id: "hb5", name: "Baby Playmat", price: 60000 },
-          { id: "hb6", name: "High Chair", price: 65000 },
+          { id: "hb1", name: "Stroller", price: 100000, duration: 40 },
+          { id: "hb2", name: "Car Seat", price: 85000, duration: 35 },
+          { id: "hb3", name: "Baby Bouncer", price: 75000, duration: 30 },
+          { id: "hb4", name: "Baby Crib", price: 125000, duration: 60 },
+          { id: "hb5", name: "Baby Playmat", price: 60000, duration: 25 },
+          { id: "hb6", name: "High Chair", price: 65000, duration: 30 },
         ],
       },
     }
@@ -816,8 +820,21 @@
       }
       
       // Update UI
+      // Compute total estimated time
+      const totalMinutes = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0)
+
+      // Helper: format minutes to hours/min string
+      const formatMinutes = (m) => {
+        const h = Math.floor(m / 60)
+        const min = m % 60
+        if (h > 0 && min > 0) return `${h} jam ${min} menit`
+        if (h > 0) return `${h} jam`
+        return `${min} menit`
+      }
+
       document.getElementById("subtotalAmount").textContent = formatCurrency(subtotal)
       totalAmount.textContent = formatCurrency(finalTotal)
+      document.getElementById("estimatedTime").textContent = formatMinutes(totalMinutes)
       
       const discountRow = document.getElementById("discountRow")
       if (appliedVoucher && discount > 0) {
@@ -880,6 +897,7 @@
         subtotal: subtotal,
         discount: discount,
         total: finalTotal,
+        totalEstimatedMinutes: selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0),
       }
 
       // Save to localStorage and redirect to checkout
