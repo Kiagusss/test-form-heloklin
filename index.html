@@ -4,35 +4,127 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Jasa Vacuum - Heloklin</title>
-  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  <style>
+    /* Leaflet map container styling */
+    #map {
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+    }
+    
+    .leaflet-control-attribution {
+      display: none;
+    }
+    
+    /* Custom styles for service items */
+    .service-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.375rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    
+    .service-item.selected .service-checkbox {
+      background: #2563eb;
+      border-color: #2563eb;
+    }
+    
+    .service-item.selected .service-checkbox svg {
+      display: block;
+    }
+    
+    .service-checkbox svg {
+      display: none;
+      color: white;
+    }
+    
+    /* Animation for spinner */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    
+    /* Custom styles for service cards */
+    .service-card.helosleep {
+      border-left-color: #2563eb;
+      background: #eff6ff;
+    }
+    
+    .service-card.heloliving {
+      border-left-color: #10b981;
+      background: #ecfdf5;
+    }
+    
+    .service-card.helobaby {
+      border-left-color: #f59e0b;
+      background: #fffbeb;
+    }
+    
+    .service-card.helosleep .service-card-category {
+      color: #2563eb;
+    }
+    
+    .service-card.heloliving .service-card-category {
+      color: #10b981;
+    }
+    
+    .service-card.helobaby .service-card-category {
+      color: #f59e0b;
+    }
+    
+    .category-badge.helosleep {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+    
+    .category-badge.heloliving {
+      background: #d1fae5;
+      color: #10b981;
+    }
+    
+    .category-badge.helobaby {
+      background: #fef3c7;
+      color: #f59e0b;
+    }
+  </style>
 </head>
-<body>
-  <main class="main-container">
-    <div class="form-wrapper">
+<body class="bg-white font-['Open_Sans'] text-slate-800 min-h-screen">
+  <main class="min-h-screen py-8 px-4">
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
       <!-- Header -->
-      <div class="form-header">
-        <div class="logo-container">
-          <div class="logo-icon">
-           <img src="heloklin-logo.png" alt="" width="80px" height="80px" style="border-radius: 10px;">
+      <div class="bg-gradient-to-br from-blue-600 to-blue-400 p-8 text-white text-center">
+        <div class="flex items-center justify-center gap-4 mb-4">
+          <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+            <img src="heloklin-logo.png" alt="Heloklin Logo" width="64" height="64" class="rounded-lg">
           </div>
-          <div>
-            <h1 class="logo-title">heloklin</h1>
-            <p class="logo-subtitle">Professional Cleaning Service</p>
+          <div class="text-left">
+            <h1 class="text-3xl font-bold">heloklin</h1>
+            <p class="text-sm opacity-90">Professional Cleaning Service</p>
           </div>
         </div>
-        <p class="header-desc">Isi form di bawah ini untuk memesan jasa vacuum cleaning profesional kami</p>
+        <p class="text-sm opacity-90 max-w-md mx-auto">Isi form di bawah ini untuk memesan jasa vacuum cleaning profesional kami</p>
       </div>
 
       <!-- Form -->
-      <form id="orderForm" class="order-form">
+      <form id="orderForm" class="p-8">
         <!-- Data Diri -->
-        <div class="form-section">
-          <h2 class="section-title">
-            <span class="section-icon">
+        <div class="mb-8 pb-8 border-b border-slate-200">
+          <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
+            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
@@ -40,55 +132,57 @@
             </span>
             Data Diri
           </h2>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="nama">Nama Lengkap</label>
-              <div class="input-wrapper">
-                <span class="input-icon">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="flex flex-col gap-2">
+              <label for="nama" class="text-sm font-medium text-slate-800">Nama Lengkap</label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3 text-slate-500 flex items-center">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                   </svg>
                 </span>
-                <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap" required>
+                <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap" required
+                  class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
               </div>
             </div>
-            <div class="form-group">
-              <label for="telepon">No. Telepon</label>
-              <div class="input-wrapper">
-                <span class="input-icon">
+            <div class="flex flex-col gap-2">
+              <label for="telepon" class="text-sm font-medium text-slate-800">No. Telepon</label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3 text-slate-500 flex items-center">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                   </svg>
                 </span>
-                <input type="tel" id="telepon" name="telepon" placeholder="08xxxxxxxxxx" required>
+                <input type="tel" id="telepon" name="telepon" placeholder="08xxxxxxxxxx" required
+                  class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
               </div>
             </div>
           </div>
         </div>
 
         <!-- Lokasi -->
-        <div class="form-section">
-          <h2 class="section-title">
-            <span class="section-icon">
+        <div class="mb-8 pb-8 border-b border-slate-200">
+          <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
+            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                 <circle cx="12" cy="10" r="3"></circle>
-              </svg>
+              </svg>  
             </span>
             Lokasi
           </h2>
           
           <!-- Map Container -->
-          <div class="map-container">
-            <div id="map" class="map"></div>
-            <div class="map-marker">
+          <div class="relative h-64 rounded-xl overflow-hidden border-2 border-slate-200">
+            <div id="map" class="w-full h-full z-10"></div>
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-full pointer-events-none z-20">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="#2563eb" stroke="#1e40af" stroke-width="2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                 <circle cx="12" cy="10" r="3" fill="white"></circle>
               </svg>
             </div>
-            <button type="button" id="getLocationBtn" class="location-btn">
+            <button type="button" id="getLocationBtn" class="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 bg-white text-blue-600 text-sm font-medium rounded-lg shadow-md cursor-pointer z-20 transition-all duration-200 hover:bg-blue-600 hover:text-white">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -97,76 +191,74 @@
               Lokasi Saat Ini
             </button>
           </div>
-          <p class="map-hint">Geser peta untuk menentukan lokasi atau gunakan tombol "Lokasi Saat Ini"</p>
+          <p class="text-xs text-slate-500 mt-2">Geser peta untuk menentukan lokasi atau gunakan tombol "Lokasi Saat Ini"</p>
           <input type="hidden" id="latitude" name="latitude">
           <input type="hidden" id="longitude" name="longitude">
 
           <!-- Alamat Detail -->
-          <div class="form-group" style="margin-top: 1rem;">
-            <label for="alamat">Detail Alamat Lengkap</label>
-            <textarea id="alamat" name="alamat" placeholder="Nama jalan, nomor rumah, patokan, dll" required></textarea>
+          <div class="flex flex-col gap-2 mt-4">
+            <label for="alamat" class="text-sm font-medium text-slate-800">Detail Alamat Lengkap</label>
+            <textarea id="alamat" name="alamat" placeholder="Nama jalan, nomor rumah, patokan, dll" required
+              class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 min-h-[100px] resize-vertical"></textarea>
           </div>
-          <div class="form-grid form-grid-3">
+          <div class="grid grid-cols-1 gap-4 mt-4 md:grid-cols-3">
+            <!-- Kelurahan -->
+            <div class="flex flex-col gap-2">
+              <label for="kelurahan" class="text-sm font-medium text-slate-800">Kelurahan</label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3 text-slate-500 flex items-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
+                    <path d="M9 21V9h6v12"></path>
+                    <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
+                    <path d="M3 21h18"></path>
+                  </svg>
+                </span>
+                <input type="text" id="kelurahan" name="kelurahan" placeholder="Kelurahan" required
+                  class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+              </div>
+            </div>
 
-  <!-- Kelurahan -->
-  <div class="form-group">
-    <label for="kelurahan">Kelurahan</label>
-    <div class="input-wrapper">
-      <span class="input-icon">
-        <!-- building icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
-          <path d="M9 21V9h6v12"></path>
-          <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
-          <path d="M3 21h18"></path>
-        </svg>
-      </span>
-      <input type="text" id="kelurahan" name="kelurahan" placeholder="Kelurahan" required>
-    </div>
-  </div>
+            <!-- Kecamatan -->
+            <div class="flex flex-col gap-2">
+              <label for="kecamatan" class="text-sm font-medium text-slate-800">Kecamatan</label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3 text-slate-500 flex items-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
+                    <path d="M9 21V9h6v12"></path>
+                    <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
+                    <path d="M3 21h18"></path>
+                  </svg>
+                </span>
+                <input type="text" id="kecamatan" name="kecamatan" placeholder="Kecamatan" required
+                  class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+              </div>
+            </div>
 
-  <!-- Kecamatan -->
-  <div class="form-group">
-    <label for="kecamatan">Kecamatan</label>
-    <div class="input-wrapper">
-      <span class="input-icon">
-        <!-- building icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
-          <path d="M9 21V9h6v12"></path>
-          <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
-          <path d="M3 21h18"></path>
-        </svg>
-      </span>
-      <input type="text" id="kecamatan" name="kecamatan" placeholder="Kecamatan" required>
-    </div>
-  </div>
-
-  <!-- Kota -->
-  <div class="form-group">
-    <label for="kota">Kota</label>
-    <div class="input-wrapper">
-      <span class="input-icon">
-        <!-- building icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
-          <path d="M9 21V9h6v12"></path>
-          <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
-          <path d="M3 21h18"></path>
-        </svg>
-      </span>
-      <input type="text" id="kota" name="kota" placeholder="Kota" required>
-    </div>
-  </div>
-
-</div>
-
+            <!-- Kota -->
+            <div class="flex flex-col gap-2">
+              <label for="kota" class="text-sm font-medium text-slate-800">Kota</label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3 text-slate-500 flex items-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 21V5a2 2 0 0 1 2-2h4v18"></path>
+                    <path d="M9 21V9h6v12"></path>
+                    <path d="M15 21V3h4a2 2 0 0 1 2 2v16"></path>
+                    <path d="M3 21h18"></path>
+                  </svg>
+                </span>
+                <input type="text" id="kota" name="kota" placeholder="Kota" required
+                  class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Jadwal Kunjungan -->
-        <div class="form-section">
-          <h2 class="section-title">
-            <span class="section-icon">
+        <div class="mb-8 pb-8 border-b border-slate-200">
+          <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
+            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -176,46 +268,46 @@
             </span>
             Jadwal Kunjungan
           </h2>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="tanggal">Tanggal Kunjungan</label>
-              <div class="input-wrapper">
-                <span class="input-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                </span>
-                <input type="date" id="tanggal" name="tanggal" required>
-              </div>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="flex flex-col gap-2">
+              <label for="tanggal" class="text-sm font-medium text-slate-800">Tanggal Kunjungan</label>
+           
+                
+                <input type="date" id="tanggal" name="tanggal" required
+                  class="w-full pl-4 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+            
             </div>
-            <div class="form-group">
-              <label for="waktu">Waktu Kunjungan</label>
-              <div class="input-wrapper">
-                <span class="input-icon">
+            <div class="flex flex-col gap-2">
+              <label for="waktu" class="text-sm font-medium text-slate-800">Waktu Kunjungan</label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3 text-slate-500 flex items-center">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
                 </span>
-                <select id="waktu" name="waktu" required>
+                <select id="waktu" name="waktu" required
+                  class="w-full pl-11 pr-12 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 cursor-pointer appearance-none">
                   <option value="">Pilih waktu</option>
                   <option value="08:00 - 10:00">08:00 - 10:00</option>
                   <option value="10:00 - 12:00">10:00 - 12:00</option>
                   <option value="13:00 - 15:00">13:00 - 15:00</option>
                   <option value="15:00 - 17:00">15:00 - 17:00</option>
                 </select>
+                <span class="pointer-events-none absolute right-3 text-slate-400">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Rincian Layanan -->
-        <div class="form-section">
-          <h2 class="section-title">
-            <span class="section-icon">
+        <div class="mb-8 pb-8 border-b border-slate-200">
+          <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
+            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -227,8 +319,8 @@
             Rincian Layanan
           </h2>
           
-          <button type="button" id="openServiceModal" class="service-trigger-btn">
-            <span class="btn-content">
+          <button type="button" id="openServiceModal" class="w-full flex items-center justify-between px-5 py-4 bg-gradient-to-br from-blue-600 to-blue-400 border-none rounded-xl text-white text-base font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+            <span class="flex items-center gap-3">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="16"></line>
@@ -236,21 +328,59 @@
               </svg>
               Pilih Layanan
             </span>
-            <span class="btn-badge" id="serviceCount">0</span>
+            <span class="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-semibold" id="serviceCount">0</span>
           </button>
 
           <!-- Selected Services -->
-          <div id="selectedServices" class="selected-services"></div>
+          <div id="selectedServices" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2"></div>
 
           <!-- Total -->
-          <div id="totalContainer" class="total-container" style="display: none;">
-            <div class="total-label">Total Estimasi</div>
-            <div class="total-amount" id="totalAmount">Rp 0</div>
+          <div id="totalContainer" class="hidden mt-4 px-5 py-5 bg-gradient-to-br from-blue-600 to-blue-400 rounded-xl text-white">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-base opacity-90">Subtotal</div>
+              <div class="text-lg font-semibold" id="subtotalAmount">Rp 0</div>
+            </div>
+            <div id="discountRow" class="hidden flex items-center justify-between mb-2 pb-2 border-b border-white/30">
+              <div class="text-sm opacity-90">Diskon (<span id="discountLabel"></span>)</div>
+              <div class="text-base font-semibold text-green-300" id="discountAmount">- Rp 0</div>
+            </div>
+            <div class="flex items-center justify-between pt-2">
+              <div class="text-base font-semibold">Total Estimasi Biaya</div>
+              <div class="text-2xl font-bold" id="totalAmount">Rp 0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voucher -->
+        <div class="mb-8">
+          <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
+            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 9h16M4 15h16M9 4v16m6-16v16"></path>
+              </svg>
+            </span>
+            Kode Voucher
+          </h2>
+          <div class="flex flex-col gap-2">
+            <div class="relative flex items-center">
+              <span class="absolute left-3 text-slate-500 flex items-center z-10">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 9h16M4 15h16M9 4v16m6-16v16"></path>
+                </svg>
+              </span>
+              <input type="text" id="voucher" name="voucher" placeholder="Masukkan kode voucher (jika ada)"
+                class="w-full pl-11 pr-24 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+              <button type="button" id="checkVoucherBtn" class="absolute right-2 px-4 py-1.5 bg-gradient-to-br from-blue-600 to-blue-400 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:from-blue-700 hover:to-blue-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Cek
+              </button>
+            </div>
+            <div id="voucherStatus" class="text-sm"></div>
+            <p class="text-xs text-slate-500">Masukkan kode voucher untuk mendapatkan diskon</p>
           </div>
         </div>
 
         <!-- Submit Button -->
-        <button type="submit" class="submit-btn">
+        <button type="submit" class="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-br from-emerald-500 to-emerald-700 border-none rounded-xl text-white text-lg font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -262,11 +392,11 @@
   </main>
 
   <!-- Service Modal -->
-  <div id="serviceModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Pilih Layanan</h2>
-        <button type="button" id="closeModal" class="modal-close">
+  <div id="serviceModal" class="hidden fixed inset-0 w-full h-full bg-black/50 z-50 items-center justify-center p-4">
+    <div class="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+        <h2 class="text-xl font-semibold">Pilih Layanan</h2>
+        <button type="button" id="closeModal" class="bg-none border-none text-slate-500 cursor-pointer p-1 rounded transition-all duration-200 hover:text-slate-800 hover:bg-slate-100">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -274,27 +404,27 @@
         </button>
       </div>
       
-      <div class="modal-search">
+      <div class="flex items-center gap-3 px-6 py-4 border-b border-slate-200 bg-slate-50">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="serviceSearch" placeholder="Cari layanan...">
+        <input type="text" id="serviceSearch" placeholder="Cari layanan..." class="flex-1 border-none bg-transparent p-2 text-base focus:outline-none focus:ring-0">
       </div>
 
-      <div class="modal-body" id="serviceList"
+      <div class="flex-1 overflow-y-auto px-6 py-4" id="serviceList">
         <!-- Services will be populated by JavaScript -->
       </div>
 
-      <div class="modal-footer">
-        <button type="button" id="clearAllServices" class="clear-btn">
+      <div class="flex items-center justify-between gap-4 px-6 py-5 border-t border-slate-200 bg-slate-50">
+        <button type="button" id="clearAllServices" class="flex items-center gap-2 px-4 py-3 bg-white border-2 border-red-500 rounded-lg text-red-500 text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-red-500 hover:text-white">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
           </svg>
           Hapus Semua
         </button>
-        <button type="button" id="confirmServices" class="confirm-btn">
+        <button type="button" id="confirmServices" class="flex-1 px-6 py-3 bg-gradient-to-br from-blue-600 to-blue-400 border-none rounded-lg text-white font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
           Konfirmasi Pilihan
         </button>
       </div>
@@ -302,6 +432,587 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+  <script>
+    // Services Data
+    const services = {
+      helosleep: {
+        name: "HELOSLEEP",
+        items: [
+          { id: "hs1", name: "Kasur Single", price: 75000 },
+          { id: "hs2", name: "Kasur Double", price: 100000 },
+          { id: "hs3", name: "Kasur King Size", price: 125000 },
+          { id: "hs4", name: "Bantal", price: 25000 },
+          { id: "hs5", name: "Guling", price: 30000 },
+          { id: "hs6", name: "Selimut", price: 35000 },
+          { id: "hs7", name: "Bed Cover", price: 50000 },
+          { id: "hs8", name: "Topper", price: 60000 },
+        ],
+      },
+      heloliving: {
+        name: "HELOLIVING",
+        items: [
+          { id: "hl1", name: "Sofa 1 Seater", price: 75000 },
+          { id: "hl2", name: "Sofa 2 Seater", price: 125000 },
+          { id: "hl3", name: "Sofa 3 Seater", price: 175000 },
+          { id: "hl4", name: "Sofa L Shape", price: 250000 },
+          { id: "hl5", name: "Kursi Makan", price: 40000 },
+          { id: "hl6", name: "Karpet Kecil", price: 50000 },
+          { id: "hl7", name: "Karpet Sedang", price: 100000 },
+          { id: "hl8", name: "Karpet Besar", price: 150000 },
+        ],
+      },
+      helobaby: {
+        name: "HELOBABY",
+        items: [
+          { id: "hb1", name: "Stroller", price: 100000 },
+          { id: "hb2", name: "Car Seat", price: 85000 },
+          { id: "hb3", name: "Baby Bouncer", price: 75000 },
+          { id: "hb4", name: "Baby Crib", price: 125000 },
+          { id: "hb5", name: "Baby Playmat", price: 60000 },
+          { id: "hb6", name: "High Chair", price: 65000 },
+        ],
+      },
+    }
+
+    // State
+    let selectedServices = []
+    let appliedVoucher = null
+    let map = null
+    let currentLat = -6.2088
+    let currentLng = 106.8456
+
+    // DOM Elements
+    const orderForm = document.getElementById("orderForm")
+    const serviceModal = document.getElementById("serviceModal")
+    const openModalBtn = document.getElementById("openServiceModal")
+    const closeModalBtn = document.getElementById("closeModal")
+    const serviceSearch = document.getElementById("serviceSearch")
+    const serviceListContainer = document.getElementById("serviceList")
+    const selectedServicesContainer = document.getElementById("selectedServices")
+    const serviceCountBadge = document.getElementById("serviceCount")
+    const totalContainer = document.getElementById("totalContainer")
+    const totalAmount = document.getElementById("totalAmount")
+    const clearAllBtn = document.getElementById("clearAllServices")
+    const confirmBtn = document.getElementById("confirmServices")
+    const getLocationBtn = document.getElementById("getLocationBtn")
+    const tanggalInput = document.getElementById("tanggal")
+
+    // Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+      // Hanya load saved order jika ada parameter ?edit=true di URL
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('edit') === 'true') {
+        loadSavedOrder();
+      }
+      
+      initMap()
+      initDatePicker()
+      renderServiceList()
+      setupEventListeners()
+      setupVoucherChecker()
+    })
+
+    function loadSavedOrder() {
+      const saved = localStorage.getItem("heloklin_order");
+      if (!saved) return;
+
+      const order = JSON.parse(saved);
+
+      // Isi form
+      document.getElementById("nama").value = order.nama || "";
+      document.getElementById("telepon").value = order.telepon || "";
+      document.getElementById("alamat").value = order.alamat || "";
+      document.getElementById("kelurahan").value = order.kelurahan || "";
+      document.getElementById("kecamatan").value = order.kecamatan || "";
+      document.getElementById("kota").value = order.kota || "";
+      document.getElementById("tanggal").value = order.tanggal || "";
+      document.getElementById("waktu").value = order.waktu || "";
+      document.getElementById("voucher").value = order.voucher || "";
+
+      // Lat long map
+      currentLat = parseFloat(order.latitude) || currentLat;
+      currentLng = parseFloat(order.longitude) || currentLng;
+
+      // Restore layanan
+      selectedServices = order.layanan || [];
+      updateSelectedServicesUI();
+      
+      // Restore voucher if applied
+      if (order.appliedVoucher) {
+        appliedVoucher = order.appliedVoucher;
+        const voucherStatus = document.getElementById("voucherStatus");
+        const discountText = appliedVoucher.type === "percentage" 
+          ? `${appliedVoucher.discount}%` 
+          : formatCurrency(appliedVoucher.discount);
+        voucherStatus.textContent = `✓ Voucher valid! Diskon ${discountText}`;
+        voucherStatus.className = "text-sm text-green-600 font-medium";
+        updateSelectedServicesUI();
+      }
+    }
+
+    // Map Initialization
+    function initMap() {
+      // Pastikan container map sudah ada
+      const mapContainer = document.getElementById('map');
+      if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+      }
+
+      // Inisialisasi peta
+      map = L.map('map', {
+        center: [currentLat, currentLng],
+        zoom: 15,
+        zoomControl: true,
+      });
+
+      // Tambahkan tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      // Tambahkan event untuk update koordinat saat peta digerakkan
+      map.on('move', () => {
+        const center = map.getCenter();
+        currentLat = center.lat;
+        currentLng = center.lng;
+        document.getElementById('latitude').value = currentLat;
+        document.getElementById('longitude').value = currentLng;
+      });
+
+      // Set initial values
+      document.getElementById('latitude').value = currentLat;
+      document.getElementById('longitude').value = currentLng;
+
+      console.log('Map initialized successfully');
+    }
+
+    function initDatePicker() {
+      const today = new Date().toISOString().split("T")[0]
+      tanggalInput.setAttribute("min", today)
+    }
+
+    function setupEventListeners() {
+      // Modal
+      openModalBtn.addEventListener("click", () => {
+        serviceModal.classList.remove("hidden")
+        serviceModal.classList.add("flex")
+        document.body.style.overflow = "hidden"
+      })
+
+      closeModalBtn.addEventListener("click", closeModal)
+
+      serviceModal.addEventListener("click", (e) => {
+        if (e.target === serviceModal) closeModal()
+      })
+
+      // Search
+      serviceSearch.addEventListener("input", (e) => {
+        renderServiceList(e.target.value)
+      })
+
+      // Clear all
+      clearAllBtn.addEventListener("click", () => {
+        selectedServices = []
+        renderServiceList(serviceSearch.value)
+        updateSelectedServicesUI()
+      })
+
+      // Confirm
+      confirmBtn.addEventListener("click", closeModal)
+
+      // Get location
+      getLocationBtn.addEventListener("click", getCurrentLocation)
+
+      // Form submit
+      orderForm.addEventListener("submit", handleSubmit)
+    }
+
+    function closeModal() {
+      serviceModal.classList.add("hidden")
+      serviceModal.classList.remove("flex")
+      document.body.style.overflow = ""
+      serviceSearch.value = ""
+      renderServiceList()
+    }
+
+    function getCurrentLocation() {
+      if (!navigator.geolocation) {
+        alert("Geolocation tidak didukung oleh browser Anda")
+        return
+      }
+
+      getLocationBtn.innerHTML = `
+        <svg class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"></circle>
+        </svg>
+        Mencari...
+      `
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          currentLat = position.coords.latitude
+          currentLng = position.coords.longitude
+          
+          // Update map view
+          if (map) {
+            map.setView([currentLat, currentLng], 17)
+          }
+          
+          document.getElementById("latitude").value = currentLat
+          document.getElementById("longitude").value = currentLng
+
+          // Panggil reverse geocoding untuk mengisi kelurahan, kecamatan, kota
+          reverseGeocode(currentLat, currentLng)
+
+          getLocationBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v2m0 16v2M2 12h2m16 0h2"></path>
+            </svg>
+            Lokasi Saat Ini
+          `
+        },
+        (error) => {
+          alert("Gagal mendapatkan lokasi: " + error.message)
+          getLocationBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v2m0 16v2M2 12h2m16 0h2"></path>
+            </svg>
+            Lokasi Saat Ini
+          `
+        },
+      )
+    }
+
+    function renderServiceList(searchTerm = "") {
+      let html = ""
+      const search = searchTerm.toLowerCase()
+
+      Object.entries(services).forEach(([category, data]) => {
+        const filteredItems = data.items.filter((item) => item.name.toLowerCase().includes(search))
+
+        if (filteredItems.length === 0) return
+
+        html += `
+          <div class="mb-6">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="category-badge ${category} px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">${data.name}</span>
+            </div>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              ${filteredItems
+                .map((item) => {
+                  const isSelected = selectedServices.some((s) => s.id === item.id)
+                  return `
+                  <div class="service-item ${isSelected ? "selected" : ""} flex items-center gap-3 p-3.5 border-2 border-slate-200 rounded-xl cursor-pointer transition-all duration-200 hover:border-blue-400 hover:bg-slate-50" data-id="${item.id}" data-category="${category}">
+                    <div class="service-checkbox">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <div class="service-info flex-1 min-w-0">
+                      <div class="service-name font-medium text-sm text-slate-800 truncate">${item.name}</div>
+                      <div class="service-price text-xs text-slate-500 font-medium">${formatCurrency(item.price)}</div>
+                    </div>
+                  </div>
+                `
+                })
+                .join("")}
+            </div>
+          </div>
+        `
+      })
+
+      if (!html) {
+        html = `<div class="text-center py-8 text-slate-500">Tidak ada layanan yang ditemukan</div>`
+      }
+
+      serviceListContainer.innerHTML = html
+
+      // Add click listeners
+      document.querySelectorAll(".service-item").forEach((item) => {
+        item.addEventListener("click", () => toggleService(item))
+      })
+    }
+
+    function toggleService(element) {
+      const id = element.dataset.id
+      const category = element.dataset.category
+
+      const existingIndex = selectedServices.findIndex((s) => s.id === id)
+
+      if (existingIndex > -1) {
+        selectedServices.splice(existingIndex, 1)
+        element.classList.remove("selected")
+      } else {
+        const service = services[category].items.find((s) => s.id === id)
+        selectedServices.push({ ...service, category })
+        element.classList.add("selected")
+      }
+
+      updateSelectedServicesUI()
+    }
+
+    function updateSelectedServicesUI() {
+      serviceCountBadge.textContent = selectedServices.length
+
+      if (selectedServices.length === 0) {
+        selectedServicesContainer.innerHTML = ""
+        totalContainer.classList.add("hidden")
+        return
+      }
+
+      const html = selectedServices
+        .map(
+          (service) => `
+        <div class="service-card ${service.category} flex items-center justify-between p-4 rounded-xl border-l-4">
+          <div class="service-card-info flex flex-col gap-1">
+            <span class="service-card-category text-xs font-semibold uppercase tracking-wider">${services[service.category].name}</span>
+            <span class="service-card-name font-semibold text-sm text-slate-800">${service.name}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="service-card-price font-semibold text-slate-800">${formatCurrency(service.price)}</span>
+            <button type="button" class="service-card-remove bg-none border-none text-red-500 cursor-pointer p-1 rounded transition-all duration-200 hover:bg-red-100" data-id="${service.id}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `
+        )
+        .join("")
+
+      selectedServicesContainer.innerHTML = html
+
+      // Add remove listeners
+      document.querySelectorAll(".service-card-remove").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation()
+          const id = btn.dataset.id
+          selectedServices = selectedServices.filter((s) => s.id !== id)
+          renderServiceList(serviceSearch.value)
+          updateSelectedServicesUI()
+        })
+      })
+
+      // Update total with discount calculation
+      const subtotal = selectedServices.reduce((sum, s) => sum + s.price, 0)
+      let discount = 0
+      let finalTotal = subtotal
+      
+      if (appliedVoucher) {
+        if (appliedVoucher.type === "percentage") {
+          discount = Math.round(subtotal * (appliedVoucher.discount / 100))
+        } else {
+          discount = appliedVoucher.discount
+        }
+        finalTotal = subtotal - discount
+      }
+      
+      // Update UI
+      document.getElementById("subtotalAmount").textContent = formatCurrency(subtotal)
+      totalAmount.textContent = formatCurrency(finalTotal)
+      
+      const discountRow = document.getElementById("discountRow")
+      if (appliedVoucher && discount > 0) {
+        const discountLabel = appliedVoucher.type === "percentage" 
+          ? `${appliedVoucher.discount}%` 
+          : appliedVoucher.code
+        document.getElementById("discountLabel").textContent = discountLabel
+        document.getElementById("discountAmount").textContent = "- " + formatCurrency(discount)
+        discountRow.classList.remove("hidden")
+      } else {
+        discountRow.classList.add("hidden")
+      }
+      
+      totalContainer.classList.remove("hidden")
+    }
+
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+      }).format(amount)
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault()
+
+      if (selectedServices.length === 0) {
+        alert("Silakan pilih minimal satu layanan")
+        return
+      }
+
+      const subtotal = selectedServices.reduce((sum, s) => sum + s.price, 0)
+      let discount = 0
+      let finalTotal = subtotal
+      
+      if (appliedVoucher) {
+        if (appliedVoucher.type === "percentage") {
+          discount = Math.round(subtotal * (appliedVoucher.discount / 100))
+        } else {
+          discount = appliedVoucher.discount
+        }
+        finalTotal = subtotal - discount
+      }
+      
+      const formData = {
+        nama: document.getElementById("nama").value,
+        telepon: document.getElementById("telepon").value,
+        latitude: document.getElementById("latitude").value,
+        longitude: document.getElementById("longitude").value,
+        alamat: document.getElementById("alamat").value,
+        kelurahan: document.getElementById("kelurahan").value,
+        kecamatan: document.getElementById("kecamatan").value,
+        kota: document.getElementById("kota").value,
+        tanggal: document.getElementById("tanggal").value,
+        waktu: document.getElementById("waktu").value,
+        voucher: document.getElementById("voucher").value,
+        appliedVoucher: appliedVoucher,
+        layanan: selectedServices,
+        subtotal: subtotal,
+        discount: discount,
+        total: finalTotal,
+      }
+
+      // Save to localStorage and redirect to checkout
+      localStorage.setItem("heloklin_order", JSON.stringify(formData))
+      window.location.href = "checkout.html"
+    }
+
+    // Function to clear saved order (opsional, bisa dipanggil dari checkout setelah order selesai)
+    function clearSavedOrder() {
+      localStorage.removeItem("heloklin_order");
+    }
+
+    // =======================
+    // REVERSE GEOCODING
+    // =======================
+    function reverseGeocode(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+
+      fetch(url, { headers: { "User-Agent": "heloklin/1.0" } })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.address) return;
+
+          console.log("Address Result:", data.address);
+          console.log("Display Name:", data.display_name);
+
+          const addr = data.address;
+
+          // Isi Detail Alamat Lengkap
+          const roadName = addr.road || addr.pedestrian || addr.path || "";
+          const houseNumber = addr.house_number || "";
+          const addressParts = [];
+          
+          if (houseNumber) addressParts.push(houseNumber);
+          if (roadName) addressParts.push(roadName);
+          
+          // Tambahkan komponen alamat tambahan jika ada
+          if (addr.hamlet) addressParts.push(addr.hamlet);
+          if (addr.residential) addressParts.push(addr.residential);
+          
+          const detailAlamat = addressParts.join(", ");
+          
+          if (detailAlamat) {
+            document.getElementById("alamat").value = detailAlamat;
+          }
+
+          // Isi Kelurahan
+          document.getElementById("kelurahan").value =
+            addr.village ||
+            addr.suburb ||
+            addr.neighbourhood ||
+            addr.quarter ||
+            addr.hamlet ||
+            "";
+
+          // Isi Kecamatan - diperbaiki dengan lebih banyak fallback
+          document.getElementById("kecamatan").value =
+            addr.subdistrict ||
+            addr.city_district ||
+            addr.district ||
+            addr.borough ||
+            addr.county ||
+            addr.municipality ||
+            "";
+
+          // Isi Kota
+          document.getElementById("kota").value =
+            addr.city ||
+            addr.town ||
+            addr.city_district ||
+            addr.municipality ||
+            addr.state_district ||
+            addr.state ||
+            "";
+
+        })
+        .catch((err) => console.error("Reverse Geocoding Error:", err));
+    }
+
+    // =======================
+    // VOUCHER CHECKER
+    // =======================
+    function setupVoucherChecker() {
+      const checkVoucherBtn = document.getElementById("checkVoucherBtn");
+      const voucherInput = document.getElementById("voucher");
+      const voucherStatus = document.getElementById("voucherStatus");
+
+      if (checkVoucherBtn) {
+        checkVoucherBtn.addEventListener("click", () => {
+          const voucherCode = voucherInput.value.trim().toUpperCase();
+          
+          if (!voucherCode) {
+            voucherStatus.textContent = "Masukkan kode voucher terlebih dahulu";
+            voucherStatus.className = "text-sm text-red-500";
+            return;
+          }
+
+          // Dummy voucher list - ganti dengan API call jika diperlukan
+          const validVouchers = {
+            "HELO10": { discount: 10, type: "percentage" },
+            "DISKON50": { discount: 50000, type: "fixed" },
+            "PROMOHELO": { discount: 15, type: "percentage" }
+          };
+
+          if (validVouchers[voucherCode]) {
+            const voucher = validVouchers[voucherCode];
+            const discountText = voucher.type === "percentage" 
+              ? `${voucher.discount}%` 
+              : formatCurrency(voucher.discount);
+            
+            // Apply voucher
+            appliedVoucher = {
+              code: voucherCode,
+              discount: voucher.discount,
+              type: voucher.type
+            };
+            
+            voucherStatus.textContent = `✓ Voucher valid! Diskon ${discountText}`;
+            voucherStatus.className = "text-sm text-green-600 font-medium";
+            
+            // Update total display with discount
+            updateSelectedServicesUI();
+          } else {
+            appliedVoucher = null;
+            voucherStatus.textContent = "✗ Kode voucher tidak valid atau sudah tidak aktif";
+            voucherStatus.className = "text-sm text-red-500";
+            
+            // Update total display without discount
+            updateSelectedServicesUI();
+          }
+        });
+      }
+    }
+  </script>
 </body>
 </html>
