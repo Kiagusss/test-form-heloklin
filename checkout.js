@@ -101,7 +101,7 @@ ${servicesText}
 *Total: ${formatCurrency(order.total)}*`
 
     const encodedMessage = encodeURIComponent(message)
-    window.open(`https://wa.me/6281234567890?text=${encodedMessage}`, "_blank")
+    window.open(`https://wa.me/6289604222829?text=${encodedMessage}`, "_blank")
   })
 
   // Edit button
