@@ -41,15 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("checkoutTanggal").textContent = formatDate(order.tanggal)
   document.getElementById("checkoutWaktu").textContent = order.waktu
   document.getElementById("checkoutTotal").textContent = formatCurrency(order.total)
-  // Estimated time
-  const formatMinutes = (m) => {
-    const h = Math.floor(m / 60)
-    const min = m % 60
-    if (h > 0 && min > 0) return `${h} jam ${min} menit`
-    if (h > 0) return `${h} jam`
-    return `${min} menit`
-  }
-  document.getElementById("checkoutEstimasi").textContent = formatMinutes(order.totalEstimatedMinutes || 0)
 
   // Render services
   const servicesContainer = document.getElementById("checkoutServices")
@@ -69,19 +60,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize map
   if (order.latitude && order.longitude) {
-    const map = window.L.map("checkoutMap", {
-      center: [order.latitude, order.longitude],
-      zoom: 15,
-      zoomControl: false,
-      dragging: false,
-      scrollWheelZoom: false,
-    })
+    // Wait for Google Maps API to load
+    const initMap = () => {
+      try {
+        if (typeof google === 'undefined' || !google.maps) {
+          console.error("Google Maps library not loaded")
+          return
+        }
 
-    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-    }).addTo(map)
+        const mapContainer = document.getElementById("checkoutMap")
+        if (!mapContainer) {
+          console.error("Map container not found")
+          return
+        }
 
-    window.L.marker([order.latitude, order.longitude]).addTo(map)
+        const position = { lat: order.latitude, lng: order.longitude }
+        
+        const map = new google.maps.Map(mapContainer, {
+          center: position,
+          zoom: 15,
+          zoomControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          dragging: false,
+          scrollwheel: false,
+          disableDoubleClickZoom: true,
+          gestureHandling: 'none',
+        })
+
+        new google.maps.Marker({
+          position: position,
+          map: map,
+        })
+        
+        console.log("Google Maps initialized successfully")
+      } catch (error) {
+        console.error("Error initializing map:", error)
+      }
+    }
+    
+    // Start trying to initialize map after a delay
+    setTimeout(initMap, 500)
   }
 
   // WhatsApp button

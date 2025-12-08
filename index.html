@@ -5,20 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Jasa Vacuum - Heloklin</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
   <style>
-    /* Leaflet map container styling */
+    /* Google Maps container styling */
     #map {
       height: 100%;
       width: 100%;
       z-index: 1;
-    }
-    
-    .leaflet-control-attribution {
-      display: none;
     }
     
     /* Custom styles for service items */
@@ -100,23 +95,119 @@
       background: #fef3c7;
       color: #f59e0b;
     }
+
+    /* Package card styles */
+    .package-card {
+      display: block;
+      background: white;
+      transition: all 0.2s ease;
+    }
+
+    .package-card.selected {
+      border-color: #0099d5;
+      background: #eff6ff;
+    }
+
+    /* Addon checkbox styles */
+    .addon-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.375rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .addon-item.selected .addon-checkbox {
+      background: #f59e0b;
+      border-color: #f59e0b;
+    }
+
+    .addon-item.selected .addon-checkbox svg {
+      display: block;
+      color: white;
+    }
+
+    .addon-checkbox svg {
+      display: none;
+      color: white;
+    }
+
+    /* Heloliving item styles */
+    .heloliving-item {
+      transition: all 0.2s ease;
+    }
+
+    .heloliving-item.selected {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+
+    .carousel-slide {
+      min-width: 100%;
+      height: 100%;
+      flex-shrink: 0;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #f3f4f6;
+      position: relative;
+    }
+
+    .carousel-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .carousel-dot.active {
+      background: white;
+      transform: scale(1.2);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
+
+    .carousel-dot:hover {
+      background: rgba(255, 255, 255, 0.8);
+    }
   </style>
 </head>
 <body class="bg-white font-['Open_Sans'] text-slate-800 min-h-screen">
   <main class="min-h-screen py-8 px-4">
     <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-      <!-- Header -->
-      <div class="bg-gradient-to-br from-blue-600 to-blue-400 p-8 text-white text-center">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
-            <img src="heloklin-logo.png" alt="Heloklin Logo" width="64" height="64" class="rounded-lg">
-          </div>
-          <div class="text-left">
-            <h1 class="text-3xl font-bold">heloklin</h1>
-            <p class="text-sm opacity-90">Professional Cleaning Service</p>
-          </div>
+      <!-- Header Carousel -->
+      <div class="relative w-full h-64 md:h-80 overflow-hidden bg-slate-200">
+        <!-- Carousel Track -->
+        <div id="carouselTrack" class="flex h-full transition-transform duration-500 ease-out">
+          <!-- Slides will be populated by JavaScript -->
         </div>
-        <p class="text-sm opacity-90 max-w-md mx-auto">Isi form di bawah ini untuk memesan jasa vacuum cleaning profesional kami</p>
+
+        <!-- Navigation Dots -->
+        <div id="carouselDots" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-30">
+          <!-- Dots will be populated by JavaScript -->
+        </div>
+
+        <!-- Previous Button -->
+        <button type="button" id="prevBtn" class="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-slate-800 rounded-full p-2 transition-all duration-200 shadow-lg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <!-- Next Button -->
+        <button type="button" id="nextBtn" class="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-slate-800 rounded-full p-2 transition-all duration-200 shadow-lg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
+       
       </div>
 
       <!-- Form -->
@@ -124,7 +215,7 @@
         <!-- Data Diri -->
         <div class="mb-8 pb-8 border-b border-slate-200">
           <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
-            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
+            <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white" style="background-color: #0099d5;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
@@ -164,7 +255,7 @@
         <!-- Lokasi -->
         <div class="mb-8 pb-8 border-b border-slate-200">
           <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
-            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
+            <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white" style="background-color: #0099d5;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                 <circle cx="12" cy="10" r="3"></circle>
@@ -258,7 +349,7 @@
         <!-- Jadwal Kunjungan -->
         <div class="mb-8 pb-8 border-b border-slate-200">
           <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
-            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
+            <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white" style="background-color: #0099d5;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -307,7 +398,7 @@
         <!-- Rincian Layanan -->
         <div class="mb-8 pb-8 border-b border-slate-200">
           <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
-            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
+            <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white" style="background-color: #0099d5;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -319,7 +410,7 @@
             Rincian Layanan
           </h2>
           
-          <button type="button" id="openServiceModal" class="w-full flex items-center justify-between px-5 py-4 bg-gradient-to-br from-blue-600 to-blue-400 border-none rounded-xl text-white text-base font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+          <button type="button" id="openServiceModal" class="w-full flex items-center justify-between px-5 py-4 border-none rounded-xl text-white text-base font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl" style="background-color: #0099d5;">
             <span class="flex items-center gap-3">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -335,7 +426,7 @@
           <div id="selectedServices" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2"></div>
 
           <!-- Total -->
-          <div id="totalContainer" class="hidden mt-4 px-5 py-5 bg-gradient-to-br from-blue-600 to-blue-400 rounded-xl text-white">
+          <div id="totalContainer" class="hidden mt-4 px-5 py-5 rounded-xl text-white" style="background-color: #0099d5;">
             <div class="flex items-center justify-between mb-2">
               <div class="text-base opacity-90">Subtotal</div>
               <div class="text-lg font-semibold" id="subtotalAmount">Rp 0</div>
@@ -344,7 +435,7 @@
               <div class="text-sm opacity-90">Diskon (<span id="discountLabel"></span>)</div>
               <div class="text-base font-semibold text-green-300" id="discountAmount">- Rp 0</div>
             </div>
-            <div class="flex items-center justify-between mb-2">
+            <div class="hidden flex items-center justify-between mb-2">
               <div class="text-sm opacity-90">Estimasi Waktu Pengerjaan</div>
               <div class="text-base font-semibold" id="estimatedTime">0 menit</div>
             </div>
@@ -358,7 +449,7 @@
         <!-- Voucher -->
         <div class="mb-8">
           <h2 class="flex items-center gap-3 text-lg font-semibold text-slate-800 mb-5">
-            <span class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">
+            <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white" style="background-color: #0099d5;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 9h16M4 15h16M9 4v16m6-16v16"></path>
               </svg>
@@ -374,7 +465,7 @@
               </span>
               <input type="text" id="voucher" name="voucher" placeholder="Masukkan kode voucher (jika ada)"
                 class="w-full pl-11 pr-24 py-3 border-2 border-slate-200 rounded-xl text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
-              <button type="button" id="checkVoucherBtn" class="absolute right-2 px-4 py-1.5 bg-gradient-to-br from-blue-600 to-blue-400 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:from-blue-700 hover:to-blue-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <button type="button" id="checkVoucherBtn" class="absolute right-2 px-4 py-1.5 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2" style="background-color: #0099d5;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
                 Cek
               </button>
             </div>
@@ -384,7 +475,7 @@
         </div>
 
         <!-- Submit Button -->
-        <button type="submit" class="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-br from-emerald-500 to-emerald-700 border-none rounded-xl text-white text-lg font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+        <button type="submit" class="w-full flex items-center justify-center gap-3 px-8 py-4 border-none rounded-xl text-white text-lg font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl" style="background-color: #0099d5;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -428,42 +519,135 @@
           </svg>
           Hapus Semua
         </button>
-        <button type="button" id="confirmServices" class="flex-1 px-6 py-3 bg-gradient-to-br from-blue-600 to-blue-400 border-none rounded-lg text-white font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+        <button type="button" id="confirmServices" class="flex-1 px-6 py-3 border-none rounded-lg text-white font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg" style="background-color: #0099d5;">
           Konfirmasi Pilihan
         </button>
       </div>
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJb468I3Puj2e6NZwOAAUFWqCyZ2WtTeg"></script>
   <script>
     // Services Data
     const services = {
       helosleep: {
         name: "HELOSLEEP",
-        items: [
-          { id: "hs1", name: "Kasur Single", price: 75000, duration: 30 },
-          { id: "hs2", name: "Kasur Double", price: 100000, duration: 45 },
-          { id: "hs3", name: "Kasur King Size", price: 125000, duration: 60 },
-          { id: "hs4", name: "Bantal", price: 25000, duration: 10 },
-          { id: "hs5", name: "Guling", price: 30000, duration: 10 },
-          { id: "hs6", name: "Selimut", price: 35000, duration: 15 },
-          { id: "hs7", name: "Bed Cover", price: 50000, duration: 20 },
-          { id: "hs8", name: "Topper", price: 60000, duration: 25 },
+        type: "package",
+        packages: [
+          {
+            id: "hsp1",
+            name: "Premium",
+            description: "Cleaning paket dasar untuk kasur 1-2 tempat tidur",
+            price: 150000,
+            duration: 45,
+            included: ["Vakum kasur", "Pembersihan permukaan", "Penghilang tungau dasar"]
+          },
+          {
+            id: "hsp2",
+            name: "Premium Plus",
+            description: "Cleaning paket menengah dengan proteksi tambahan",
+            price: 200000,
+            duration: 60,
+            included: ["Vakum kasur", "Pembersihan permukaan", "Penghilang tungau", "Proteksi antimikroba"]
+          },
+          {
+            id: "hsp3",
+            name: "Ultimate",
+            description: "Cleaning lengkap untuk 2-3 tempat tidur",
+            price: 280000,
+            duration: 90,
+            included: ["Vakum kasur", "Pembersihan mendalam", "Penghilang tungau profesional", "Proteksi antimikroba", "Penghilang noda"]
+          },
+          {
+            id: "hsp4",
+            name:   "Ultimate Plus",
+            description: "Paket premium lengkap dengan hasil maksimal",
+            price: 380000,
+            duration: 120,
+            included: [ "Vakum kasur profesional", "Pembersihan mendalam", "Penghilang tungau profesional", "Proteksi antimikroba premium", "Penghilang noda", "Parfum kasur", "Inspeksi kesehatan tidur"]
+          }
         ],
+        addons: [
+          { id: "hsao1", name: "Bantal", price: 15000, duration: 10 },
+          { id: "hsao2", name: "Guling", price: 15000, duration: 10 },
+          { id: "hsao3", name: "Bantal Sofa", price: 15000, duration: 10 },
+          { id: "hsao4", name: "Selimut", price: 20000, duration: 15 },
+          { id: "hsao5", name: "Bed Cover", price: 25000, duration: 15 },
+          { id: "hsao6", name: "Topper", price: 30000, duration: 20 }
+        ]
       },
       heloliving: {
         name: "HELOLIVING",
-        items: [
-          { id: "hl1", name: "Sofa 1 Seater", price: 75000, duration: 30 },
-          { id: "hl2", name: "Sofa 2 Seater", price: 125000, duration: 45 },
-          { id: "hl3", name: "Sofa 3 Seater", price: 175000, duration: 60 },
-          { id: "hl4", name: "Sofa L Shape", price: 250000, duration: 90 },
-          { id: "hl5", name: "Kursi Makan", price: 40000, duration: 15 },
-          { id: "hl6", name: "Karpet Kecil", price: 50000, duration: 25 },
-          { id: "hl7", name: "Karpet Sedang", price: 100000, duration: 45 },
-          { id: "hl8", name: "Karpet Besar", price: 150000, duration: 60 },
+        type: "package",
+        packages: [
+          {
+            id: "hlp1",
+            name: "Premium",
+            description: "Paket cleaning dasar untuk furniture",
+            items: [
+              { name: "Sofa ≤100cm", price: 80000, duration: 30 },
+              { name: "Sofa 101-170cm", price: 150000, duration: 45 },
+              { name: "Sofa >170cm", price: 220000, duration: 60 },
+              { name: "Kursi Makan", price: 35000, duration: 15 },
+              { name: "Karpet Kecil", price: 50000, duration: 25 },
+              { name: "Karpet Sedang", price: 90000, duration: 40 },
+              { name: "Karpet Besar", price: 140000, duration: 55 }
+            ],
+            included: ["Vakum standar", "Pembersihan permukaan", "Penghilang debu"]
+          },
+          {
+            id: "hlp2",
+            name: "Ultimate",
+            description: "Paket cleaning menyeluruh dengan deep cleaning",
+            items: [
+              { name: "Sofa ≤100cm", price: 120000, duration: 40 },
+              { name: "Sofa 101-170cm", price: 200000, duration: 60 },
+              { name: "Sofa >170cm", price: 300000, duration: 90 },
+              { name: "Kursi Makan", price: 50000, duration: 20 },
+              { name: "Karpet Kecil", price: 80000, duration: 35 },
+              { name: "Karpet Sedang", price: 130000, duration: 55 },
+              { name: "Karpet Besar", price: 200000, duration: 75 }
+            ],
+            included: ["Deep vacuum", "Pembersihan mendalam", "Penghilang noda", "Proteksi fabric"]
+          },
+          {
+            id: "hlp3",
+            name: "Aureva",
+            description: "Paket premium dengan teknologi Aureva terbaik",
+            items: [
+              { name: "Sofa ≤100cm", price: 180000, duration: 50 },
+              { name: "Sofa 101-170cm", price: 280000, duration: 75 },
+              { name: "Sofa >170cm", price: 420000, duration: 120 },
+              { name: "Kursi Makan", price: 75000, duration: 25 },
+              { name: "Karpet Kecil", price: 120000, duration: 45 },
+              { name: "Karpet Sedang", price: 180000, duration: 65 },
+              { name: "Karpet Besar", price: 280000, duration: 90 }
+            ],
+            included: ["Teknologi Aureva", "Deep vacuum profesional", "Stain removal expert", "Proteksi antimikroba premium", "Parfum furniture", "UV sterilization"]
+          }
         ],
+        addons: {
+          premium: [
+            { id: "hlao_p1", name: "Bantal Sofa Kecil", price: 15000, duration: 10 },
+            { id: "hlao_p2", name: "Bantal Sofa Sedang", price: 20000, duration: 12 },
+            { id: "hlao_p3", name: "Cushion", price: 15000, duration: 10 }
+          ],
+          ultimate: [
+            { id: "hlao_u1", name: "Bantal Sofa Kecil", price: 20000, duration: 12 },
+            { id: "hlao_u2", name: "Bantal Sofa Sedang", price: 25000, duration: 15 },
+            { id: "hlao_u3", name: "Cushion", price: 20000, duration: 12 },
+            { id: "hlao_u4", name: "Ottoman", price: 50000, duration: 25 },
+            { id: "hlao_u5", name: "Pouffe", price: 40000, duration: 20 }
+          ],
+          aureva: [
+            { id: "hlao_a1", name: "Bantal Sofa Kecil", price: 25000, duration: 15 },
+            { id: "hlao_a2", name: "Bantal Sofa Sedang", price: 35000, duration: 18 },
+            { id: "hlao_a3", name: "Cushion", price: 25000, duration: 15 },
+            { id: "hlao_a4", name: "Ottoman", price: 70000, duration: 30 },
+            { id: "hlao_a5", name: "Pouffe", price: 55000, duration: 25 },
+            { id: "hlao_a6", name: "Rug Premium", price: 100000, duration: 40 }
+          ]
+        }
       },
       helobaby: {
         name: "HELOBABY",
@@ -481,6 +665,9 @@
     // State
     let selectedServices = []
     let appliedVoucher = null
+    let selectedHelosleepPackage = null // Track selected helosleep package
+    let selectedHelolivingPackages = [] // Track selected heloliving packages (can select multiple)
+    let selectedHelolivingItems = [] // Track selected heloliving items within packages
     let map = null
     let currentLat = -6.2088
     let currentLng = 106.8456
@@ -501,15 +688,158 @@
     const getLocationBtn = document.getElementById("getLocationBtn")
     const tanggalInput = document.getElementById("tanggal")
 
-    // Initialize
+    // =======================
+    // CAROUSEL FUNCTIONALITY
+    // =======================
+    const carouselSlides = [
+      {
+        image: "images/aureva_promo.jpg"
+      },
+      {
+        image: "images/heloklin_promo.jpg"
+      },
+    
+      {
+        image: "images/promo_test.webp"
+      },
+    
+    ]
+
+    let currentSlide = 0
+    let autoRotateTimer = null
+
+    function initCarousel() {
+      const carouselTrack = document.getElementById("carouselTrack")
+      const carouselDots = document.getElementById("carouselDots")
+      const prevBtn = document.getElementById("prevBtn")
+      const nextBtn = document.getElementById("nextBtn")
+
+      // Create slides
+      carouselSlides.forEach((slide, index) => {
+        const slideEl = document.createElement("div")
+        slideEl.className = "carousel-slide"
+        slideEl.style.backgroundImage = `url('${slide.image}')`
+        carouselTrack.appendChild(slideEl)
+      })
+
+      // Create dots
+      carouselSlides.forEach((_, index) => {
+        const dot = document.createElement("button")
+        dot.type = "button"
+        dot.className = `carousel-dot ${index === 0 ? "active" : ""}`
+        dot.addEventListener("click", () => goToSlide(index))
+        carouselDots.appendChild(dot)
+      })
+
+      // Event listeners
+      prevBtn.addEventListener("click", () => {
+        clearAutoRotate()
+        prevSlide()
+        startAutoRotate()
+      })
+
+      nextBtn.addEventListener("click", () => {
+        clearAutoRotate()
+        nextSlide()
+        startAutoRotate()
+      })
+
+      // Touch/Swipe support
+      let touchStartX = 0
+      let touchEndX = 0
+
+      carouselTrack.addEventListener("touchstart", (e) => {
+        touchStartX = e.changedTouches[0].screenX
+      })
+
+      carouselTrack.addEventListener("touchend", (e) => {
+        touchEndX = e.changedTouches[0].screenX
+        handleSwipe()
+      })
+
+      function handleSwipe() {
+        if (touchStartX - touchEndX > 50) {
+          // Swipe left
+          clearAutoRotate()
+          nextSlide()
+          startAutoRotate()
+        } else if (touchEndX - touchStartX > 50) {
+          // Swipe right
+          clearAutoRotate()
+          prevSlide()
+          startAutoRotate()
+        }
+      }
+
+      // Start auto-rotation
+      startAutoRotate()
+    }
+
+    function goToSlide(index) {
+      currentSlide = index
+      updateCarousel()
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % carouselSlides.length
+      updateCarousel()
+    }
+
+    function prevSlide() {
+      currentSlide = (currentSlide - 1 + carouselSlides.length) % carouselSlides.length
+      updateCarousel()
+    }
+
+    function updateCarousel() {
+      const carouselTrack = document.getElementById("carouselTrack")
+      const dots = document.querySelectorAll(".carousel-dot")
+
+      // Update track position
+      carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`
+
+      // Update dots
+      dots.forEach((dot, index) => {
+        dot.classList.toggle("active", index === currentSlide)
+      })
+    }
+
+    function startAutoRotate() {
+      autoRotateTimer = setInterval(() => {
+        nextSlide()
+      }, 5000)
+    }
+
+    function clearAutoRotate() {
+      if (autoRotateTimer) {
+        clearInterval(autoRotateTimer)
+        autoRotateTimer = null
+      }
+    }
+
+    // Initialize carousel when DOM is ready
     document.addEventListener("DOMContentLoaded", () => {
+      initCarousel()
+      
       // Hanya load saved order jika ada parameter ?edit=true di URL
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('edit') === 'true') {
         loadSavedOrder();
       }
       
-      initMap()
+      // Wait for Google Maps to be available before initializing map
+      if (typeof google !== 'undefined' && google.maps) {
+        initMap()
+      } else {
+        // Retry after a short delay
+        setTimeout(() => {
+          if (typeof google !== 'undefined' && google.maps) {
+            initMap()
+          } else {
+            console.error('Google Maps failed to load')
+          }
+        }, 1000)
+      }
+      
       initDatePicker()
       renderServiceList()
       setupEventListeners()
@@ -537,8 +867,28 @@
       currentLat = parseFloat(order.latitude) || currentLat;
       currentLng = parseFloat(order.longitude) || currentLng;
 
-      // Restore layanan
-      selectedServices = order.layanan || [];
+      // Restore layanan (ensure quantity default 1)
+      selectedServices = (order.layanan || []).map((s) => ({
+        ...s,
+        quantity: s.quantity || 1,
+      }));
+      
+      // Restore helosleep package if exists
+      const helosleepPackage = selectedServices.find(s => s.type === "package" && s.id.startsWith("hsp"));
+      if (helosleepPackage) {
+        selectedHelosleepPackage = helosleepPackage;
+      }
+      
+      // Restore heloliving packages and items if exist
+      selectedHelolivingPackages = selectedServices
+        .filter(s => s.type === "package" && s.id.startsWith("hlp"))
+        .map(p => p.id);
+
+      const helolivingItems = selectedServices.filter(s => s.type === "heloliving_item");
+      if (helolivingItems.length > 0) {
+        selectedHelolivingItems = helolivingItems;
+      }
+      
       updateSelectedServicesUI();
       
       // Restore voucher if applied
@@ -556,6 +906,12 @@
 
     // Map Initialization
     function initMap() {
+      // Check if Google Maps is loaded
+      if (typeof google === 'undefined' || !google.maps) {
+        console.error('Google Maps not loaded yet');
+        return;
+      }
+
       // Pastikan container map sudah ada
       const mapContainer = document.getElementById('map');
       if (!mapContainer) {
@@ -563,33 +919,42 @@
         return;
       }
 
-      // Inisialisasi peta
-      map = L.map('map', {
-        center: [currentLat, currentLng],
+      // Inisialisasi Google Maps
+      const centerPosition = { lat: currentLat, lng: currentLng };
+      
+      map = new google.maps.Map(mapContainer, {
+        center: centerPosition,
         zoom: 15,
         zoomControl: true,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
 
-      // Tambahkan tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
+      // Tambahkan marker di tengah menggunakan standard Marker
+      const marker = new google.maps.Marker({
+        position: centerPosition,
+        map: map,
+        draggable: false,
+      });
 
-      // Tambahkan event untuk update koordinat saat peta digerakkan
-      map.on('move', () => {
+      // Update koordinat saat peta digerakkan
+      map.addListener('center_changed', () => {
         const center = map.getCenter();
-        currentLat = center.lat;
-        currentLng = center.lng;
+        currentLat = center.lat();
+        currentLng = center.lng();
         document.getElementById('latitude').value = currentLat;
         document.getElementById('longitude').value = currentLng;
+        
+        // Update marker position
+        marker.setPosition({ lat: currentLat, lng: currentLng });
       });
 
       // Set initial values
       document.getElementById('latitude').value = currentLat;
       document.getElementById('longitude').value = currentLng;
 
-      console.log('Map initialized successfully');
+      console.log('Google Maps initialized successfully');
     }
 
     function initDatePicker() {
@@ -619,6 +984,9 @@
       // Clear all
       clearAllBtn.addEventListener("click", () => {
         selectedServices = []
+        selectedHelosleepPackage = null
+        selectedHelolivingPackages = []
+        selectedHelolivingItems = []
         renderServiceList(serviceSearch.value)
         updateSelectedServicesUI()
       })
@@ -661,7 +1029,8 @@
           
           // Update map view
           if (map) {
-            map.setView([currentLat, currentLng], 17)
+            map.setCenter({ lat: currentLat, lng: currentLng })
+            map.setZoom(17)
           }
           
           document.getElementById("latitude").value = currentLat
@@ -698,6 +1067,123 @@
       const search = searchTerm.toLowerCase()
 
       Object.entries(services).forEach(([category, data]) => {
+        // Handle package-based services (HELOSLEEP & HELOLIVING)
+        if (data.type === "package") {
+          const filteredPackages = data.packages.filter((pkg) => 
+            pkg.name.toLowerCase().includes(search) || pkg.description.toLowerCase().includes(search)
+          )
+
+          if (filteredPackages.length === 0) return
+
+          html += `
+            <div class="mb-8">
+              <div class="flex items-center gap-3 mb-4">
+                <span class="category-badge ${category} px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">${data.name} - PILIH PAKET</span>
+              </div>
+              <div class="grid grid-cols-1 gap-3 mb-6">
+                ${filteredPackages
+                  .map((pkg) => {
+                    const isHelosleep = category === "helosleep"
+                    const isHeloliving = category === "heloliving"
+                    const isSelected = isHelosleep
+                      ? selectedHelosleepPackage && selectedHelosleepPackage.id === pkg.id
+                      : selectedHelolivingPackages.includes(pkg.id)
+                    const addonList = isHelosleep
+                      ? data.addons
+                      : (data.addons[pkg.name.toLowerCase()] || [])
+                    return `
+                    <div class="package-card ${isSelected ? "selected" : ""} p-4 border-2 border-slate-200 rounded-xl cursor-pointer transition-all duration-200 hover:border-blue-400 hover:bg-slate-50" data-package-id="${pkg.id}" data-category="${category}">
+                      <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1">
+                          <h3 class="font-semibold text-slate-800">${pkg.name}</h3>
+                          <p class="text-xs text-slate-500 mt-1">${pkg.description}</p>
+                          <div class="flex items-start gap-2 mt-2">
+                            <div class="flex-shrink-0 mt-1">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </div>
+                            <div class="text-xs text-slate-600 space-y-1">
+                              ${pkg.included.map(item => `<div>• ${item}</div>`).join("")}
+                            </div>
+                          </div>
+                        </div>
+                        ${isHelosleep ? `
+                          <div class="text-right ml-4">
+                            <div class="text-lg font-bold text-blue-600">${formatCurrency(pkg.price)}</div>
+                            <div class="text-xs text-slate-500">${pkg.duration} menit</div>
+                          </div>
+                        ` : ""}
+                      </div>
+
+                      ${isHeloliving && isSelected ? `
+                        <div class="mt-3 pt-3 border-t border-slate-200">
+                          <p class="text-xs font-semibold text-slate-700 mb-2">Pilih item yang ingin dibersihkan:</p>
+                          <div class="space-y-2">
+                            ${pkg.items.map((item, idx) => {
+                              const itemId = `${pkg.id}_item_${idx}`
+                              const isItemSelected = selectedHelolivingItems.some(i => i.id === itemId)
+                              return `
+                                <div class="heloliving-item ${isItemSelected ? "selected" : ""} flex items-center justify-between p-2 border border-slate-200 rounded-lg cursor-pointer hover:border-green-400 hover:bg-slate-50" data-item-id="${itemId}" data-package-id="${pkg.id}" data-item-index="${idx}">
+                                  <div class="flex items-center gap-2">
+                                    <div class="item-checkbox" style="width: 16px; height: 16px; border: 2px solid #e2e8f0; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; ${isItemSelected ? 'background:#10b981;border-color:#10b981;' : ''}">
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" style="${isItemSelected ? 'display:block;' : 'display:none;'}">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                      </svg>
+                                    </div>
+                                    <span class="text-sm text-slate-700">${item.name}</span>
+                                  </div>
+                                  <div class="text-right">
+                                    <div class="text-sm font-semibold text-slate-700">${formatCurrency(item.price)}</div>
+                                    <div class="text-xs text-slate-500">${item.duration} menit</div>
+                                  </div>
+                                </div>
+                              `
+                            }).join("")}
+                          </div>
+                        </div>
+                      ` : ""}
+
+                      ${isSelected ? `
+                        <div class="mt-4 pt-4 border-t border-slate-200">
+                          <div class="flex items-center gap-3 mb-3">
+                            <span class="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-amber-100 text-amber-700">Add-ons ${pkg.name}</span>
+                          </div>
+                          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            ${addonList
+                              .map((addon) => {
+                                const addonId = isHeloliving ? `${pkg.id}_addon_${addon.id}` : addon.id
+                                const addonService = selectedServices.find(s => s.id === addonId)
+                                const isAddonSelected = !!addonService
+                                return `
+                                <div class="addon-item ${isAddonSelected ? "selected" : ""} flex items-center gap-3 p-3 border-2 border-slate-200 rounded-lg cursor-pointer transition-all duration-200 hover:border-amber-400 hover:bg-slate-50" data-addon-id="${addonId}" data-base-addon-id="${addon.id}" data-category="${category}" data-package-id="${pkg.id}">
+                                  <div class="addon-checkbox">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                      <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                  </div>
+                                  <div class="addon-info flex-1 min-w-0">
+                                    <div class="addon-name font-medium text-sm text-slate-800">${addon.name}</div>
+                                    <div class="addon-price text-xs text-slate-500 font-medium">${formatCurrency(addon.price)}</div>
+                                  </div>
+                                </div>
+                                `
+                              })
+                              .join("")}
+                          </div>
+                        </div>
+                      ` : ""}
+                    </div>
+                    `
+                  })
+                  .join("")}
+              </div>
+            </div>
+          `
+          return
+        }
+
+        // Handle regular items (HELOBABY)
         const filteredItems = data.items.filter((item) => item.name.toLowerCase().includes(search))
 
         if (filteredItems.length === 0) return
@@ -737,10 +1223,178 @@
 
       serviceListContainer.innerHTML = html
 
-      // Add click listeners
+      // Add click listeners for packages
+      document.querySelectorAll(".package-card").forEach((card) => {
+        card.addEventListener("click", (e) => {
+          // Don't trigger if clicking on heloliving item
+          if (e.target.closest('.heloliving-item')) return
+          if (e.target.closest('.addon-item')) return
+          selectPackage(card)
+        })
+      })
+
+      // Add click listeners for heloliving items
+      document.querySelectorAll(".heloliving-item").forEach((item) => {
+        item.addEventListener("click", () => toggleHelolivingItem(item))
+      })
+
+      // Add click listeners for add-ons
+      document.querySelectorAll(".addon-item").forEach((item) => {
+        item.addEventListener("click", () => toggleAddon(item))
+      })
+
+      // Add click listeners for regular services
       document.querySelectorAll(".service-item").forEach((item) => {
         item.addEventListener("click", () => toggleService(item))
       })
+    }
+
+    function selectPackage(element) {
+      const packageId = element.dataset.packageId
+      const category = element.dataset.category
+
+      // Find the package
+      const pkg = services[category].packages.find((p) => p.id === packageId)
+
+      if (category === "helosleep") {
+        if (selectedHelosleepPackage && selectedHelosleepPackage.id === packageId) {
+          // Deselect
+          selectedHelosleepPackage = null
+          // Remove all helosleep services and addons
+          selectedServices = selectedServices.filter(s => !s.id.startsWith("hsp") && !s.id.startsWith("hsao"))
+        } else {
+          // Select new package
+          selectedHelosleepPackage = pkg
+          // Remove old helosleep services
+          selectedServices = selectedServices.filter(s => !s.id.startsWith("hsp") && !s.id.startsWith("hsao"))
+          // Add package as service
+          selectedServices.push({
+            id: pkg.id,
+            name: pkg.name,
+            price: pkg.price,
+            duration: pkg.duration,
+            category: "helosleep",
+            type: "package",
+            quantity: 1
+          })
+        }
+      } else if (category === "heloliving") {
+        const isAlreadySelected = selectedHelolivingPackages.includes(packageId)
+
+        if (isAlreadySelected) {
+          // Deselect this package and remove related items/addons
+          selectedHelolivingPackages = selectedHelolivingPackages.filter((id) => id !== packageId)
+          selectedHelolivingItems = selectedHelolivingItems.filter((item) => !item.id.startsWith(`${packageId}_item_`))
+          selectedServices = selectedServices.filter((s) => s.id !== packageId && !s.id.startsWith(`${packageId}_item_`) && !s.id.startsWith(`${packageId}_addon_`))
+        } else {
+          // Select additional package without affecting others
+          selectedHelolivingPackages.push(packageId)
+          selectedServices.push({
+            id: pkg.id,
+            name: pkg.name,
+            price: pkg.price || 0,
+            duration: pkg.duration || 0,
+            category: "heloliving",
+            type: "package",
+            quantity: 1
+          })
+        }
+      }
+
+      // Re-render to show/hide add-ons and items
+      renderServiceList()
+      updateSelectedServicesUI()
+    }
+
+    function toggleHelolivingItem(element) {
+      const itemId = element.dataset.itemId
+      const packageId = element.dataset.packageId
+      const itemIndex = parseInt(element.dataset.itemIndex)
+
+      const pkg = services.heloliving.packages.find(p => p.id === packageId)
+      const item = pkg.items[itemIndex]
+
+      const existingIndex = selectedHelolivingItems.findIndex((i) => i.id === itemId)
+
+      if (existingIndex > -1) {
+        // Remove item
+        selectedHelolivingItems.splice(existingIndex, 1)
+        selectedServices = selectedServices.filter(s => s.id !== itemId)
+        element.classList.remove("selected")
+        
+        // Update checkbox visual
+        const checkbox = element.querySelector('.item-checkbox')
+        checkbox.style.background = ''
+        checkbox.style.borderColor = '#e2e8f0'
+        checkbox.querySelector('svg').style.display = 'none'
+      } else {
+        // Add item
+        const serviceItem = {
+          id: itemId,
+          name: `${pkg.name} - ${item.name}`,
+          price: item.price,
+          duration: item.duration,
+          category: "heloliving",
+          packageName: pkg.name,
+          type: "heloliving_item",
+          quantity: 1
+        }
+        selectedHelolivingItems.push(serviceItem)
+        selectedServices.push(serviceItem)
+        element.classList.add("selected")
+        
+        // Update checkbox visual
+        const checkbox = element.querySelector('.item-checkbox')
+        checkbox.style.background = '#10b981'
+        checkbox.style.borderColor = '#10b981'
+        checkbox.querySelector('svg').style.display = 'block'
+      }
+
+      updateSelectedServicesUI()
+    }
+
+    function toggleAddon(element) {
+      const addonId = element.dataset.addonId
+      const category = element.dataset.category
+      const packageId = element.dataset.packageId
+      const baseAddonId = element.dataset.baseAddonId
+
+      // Get the correct addons based on category and package
+      let addonData
+      let addonPackageName = null
+      if (category === "helosleep") {
+        addonData = services[category].addons.find((a) => a.id === addonId)
+        const pkg = selectedHelosleepPackage || services.helosleep.packages.find((p) => p.id === selectedHelosleepPackage?.id)
+        addonPackageName = pkg ? pkg.name : services.helosleep.name
+      } else if (category === "heloliving") {
+        const pkg = services.heloliving.packages.find((p) => p.id === packageId)
+        if (!pkg) return
+        const packageName = pkg.name.toLowerCase()
+        addonData = services[category].addons[packageName]?.find((a) => a.id === baseAddonId)
+        addonPackageName = pkg.name
+      }
+
+      if (!addonData) return
+
+      const existingIndex = selectedServices.findIndex((s) => s.id === addonId)
+
+      if (existingIndex > -1) {
+        selectedServices.splice(existingIndex, 1)
+        element.classList.remove("selected")
+      } else {
+        selectedServices.push({
+          ...addonData,
+          category: category,
+          type: "addon",
+          id: addonId,
+          packageId: packageId,
+          packageName: addonPackageName,
+          quantity: 1
+        })
+        element.classList.add("selected")
+      }
+
+      updateSelectedServicesUI()
     }
 
     function toggleService(element) {
@@ -754,7 +1408,7 @@
         element.classList.remove("selected")
       } else {
         const service = services[category].items.find((s) => s.id === id)
-        selectedServices.push({ ...service, category })
+        selectedServices.push({ ...service, category, quantity: 1 })
         element.classList.add("selected")
       }
 
@@ -770,27 +1424,117 @@
         return
       }
 
-      const html = selectedServices
-        .map(
-          (service) => `
-        <div class="service-card ${service.category} flex items-center justify-between p-4 rounded-xl border-l-4">
-          <div class="service-card-info flex flex-col gap-1">
-            <span class="service-card-category text-xs font-semibold uppercase tracking-wider">${services[service.category].name}</span>
-            <span class="service-card-name font-semibold text-sm text-slate-800">${service.name}</span>
+      // Group services: packages, heloliving items, add-ons, regular services
+      const packageServices = selectedServices.filter(s => s.type === "package")
+      const helolivingItems = selectedServices.filter(s => s.type === "heloliving_item")
+      const addonServices = selectedServices.filter(s => s.type === "addon")
+      const regularServices = selectedServices.filter(s => !s.type)
+
+      let html = ""
+
+      // Render packages
+      if (packageServices.length > 0) {
+        html += packageServices.map(pkg => `
+          <div class="service-card ${pkg.category} flex items-center justify-between p-4 rounded-xl border-l-4">
+            <div class="service-card-info flex flex-col gap-1">
+              <span class="service-card-category text-xs font-semibold uppercase tracking-wider">${services[pkg.category].name}</span>
+              <span class="service-card-name font-semibold text-sm text-slate-800">${pkg.name} (Paket)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1 border rounded-lg px-2 py-1 bg-white/70">
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${pkg.id}" data-delta="-1">−</button>
+                <span class="min-w-[28px] text-center text-sm font-semibold" data-qty-id="${pkg.id}">${pkg.quantity || 1}</span>
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${pkg.id}" data-delta="1">+</button>
+              </div>
+              <span class="service-card-price font-semibold text-slate-800">${formatCurrency((pkg.price || 0) * (pkg.quantity || 1))}</span>
+              <button type="button" class="service-card-remove bg-none border-none text-red-500 cursor-pointer p-1 rounded transition-all duration-200 hover:bg-red-100" data-id="${pkg.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
           </div>
-          <div class="flex items-center gap-3">
-            <span class="service-card-price font-semibold text-slate-800">${formatCurrency(service.price)}</span>
-            <button type="button" class="service-card-remove bg-none border-none text-red-500 cursor-pointer p-1 rounded transition-all duration-200 hover:bg-red-100" data-id="${service.id}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+        `).join("")
+      }
+
+      // Render heloliving items
+      if (helolivingItems.length > 0) {
+        html += helolivingItems.map(item => `
+          <div class="service-card heloliving flex items-center justify-between p-3 rounded-lg border-l-4 ml-4 opacity-90">
+            <div class="service-card-info flex flex-col gap-1">
+              <span class="service-card-category text-xs font-semibold uppercase tracking-wider">${item.packageName || "HELOLIVING"}</span>
+              <span class="service-card-name font-medium text-sm text-slate-800">${item.name}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1 border rounded-lg px-2 py-1 bg-white/70">
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${item.id}" data-delta="-1">−</button>
+                <span class="min-w-[28px] text-center text-sm font-semibold" data-qty-id="${item.id}">${item.quantity || 1}</span>
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${item.id}" data-delta="1">+</button>
+              </div>
+              <span class="service-card-price font-semibold text-slate-800">${formatCurrency((item.price || 0) * (item.quantity || 1))}</span>
+              <button type="button" class="service-card-remove bg-none border-none text-red-500 cursor-pointer p-1 rounded transition-all duration-200 hover:bg-red-100" data-id="${item.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
-      `
-        )
-        .join("")
+        `).join("")
+      }
+
+      // Render add-ons
+      if (addonServices.length > 0) {
+        html += addonServices.map(addon => `
+          <div class="service-card ${addon.category} flex items-center justify-between p-3 rounded-lg border-l-4 ml-4 opacity-90">
+            <div class="service-card-info flex flex-col gap-1">
+              <span class="service-card-category text-xs font-semibold uppercase tracking-wider">Add-on</span>
+              <span class="service-card-name font-medium text-sm text-slate-800">${addon.packageName ? addon.packageName + " - " : ""}${addon.name}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1 border rounded-lg px-2 py-1 bg-white/70">
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${addon.id}" data-delta="-1">−</button>
+                <span class="min-w-[28px] text-center text-sm font-semibold" data-qty-id="${addon.id}">${addon.quantity || 1}</span>
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${addon.id}" data-delta="1">+</button>
+              </div>
+              <span class="service-card-price font-semibold text-slate-800">${formatCurrency((addon.price || 0) * (addon.quantity || 1))}</span>
+              <button type="button" class="service-card-remove bg-none border-none text-red-500 cursor-pointer p-1 rounded transition-all duration-200 hover:bg-red-100" data-id="${addon.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `).join("")
+      }
+
+      // Render regular services
+      if (regularServices.length > 0) {
+        html += regularServices.map(service => `
+          <div class="service-card ${service.category} flex items-center justify-between p-4 rounded-xl border-l-4">
+            <div class="service-card-info flex flex-col gap-1">
+              <span class="service-card-category text-xs font-semibold uppercase tracking-wider">${services[service.category].name}</span>
+              <span class="service-card-name font-semibold text-sm text-slate-800">${service.name}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1 border rounded-lg px-2 py-1 bg-white/70">
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${service.id}" data-delta="-1">−</button>
+                <span class="min-w-[28px] text-center text-sm font-semibold" data-qty-id="${service.id}">${service.quantity || 1}</span>
+                <button type="button" class="qty-btn text-slate-700 hover:text-slate-900" data-id="${service.id}" data-delta="1">+</button>
+              </div>
+              <span class="service-card-price font-semibold text-slate-800">${formatCurrency((service.price || 0) * (service.quantity || 1))}</span>
+              <button type="button" class="service-card-remove bg-none border-none text-red-500 cursor-pointer p-1 rounded transition-all duration-200 hover:bg-red-100" data-id="${service.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `).join("")
+      }
 
       selectedServicesContainer.innerHTML = html
 
@@ -799,14 +1543,42 @@
         btn.addEventListener("click", (e) => {
           e.stopPropagation()
           const id = btn.dataset.id
+          
+          // Check if removing a package
+          if (id.startsWith("hsp")) {
+            selectedHelosleepPackage = null
+            // Remove all helosleep addons too
+            selectedServices = selectedServices.filter(s => !s.id.startsWith("hsao"))
+          } else if (id.startsWith("hlp")) {
+            selectedHelolivingPackages = selectedHelolivingPackages.filter((pkgId) => pkgId !== id)
+            selectedHelolivingItems = selectedHelolivingItems.filter((item) => !item.id.startsWith(`${id}_item_`))
+            // Remove all heloliving items and addons for this package
+            selectedServices = selectedServices.filter(s => s.id !== id && !s.id.startsWith(`${id}_item_`) && !s.id.startsWith(`${id}_addon_`))
+          } else if (id.includes("_item_")) {
+            // Removing heloliving item
+            selectedHelolivingItems = selectedHelolivingItems.filter(i => i.id !== id)
+          } else if (id.includes("_addon_")) {
+            // Removing heloliving add-on does not need extra state cleanup
+          }
+          
           selectedServices = selectedServices.filter((s) => s.id !== id)
           renderServiceList(serviceSearch.value)
           updateSelectedServicesUI()
         })
       })
 
+      // Add quantity listeners
+      document.querySelectorAll(".qty-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation()
+          const id = btn.dataset.id
+          const delta = parseInt(btn.dataset.delta, 10)
+          changeQuantity(id, delta)
+        })
+      })
+
       // Update total with discount calculation
-      const subtotal = selectedServices.reduce((sum, s) => sum + s.price, 0)
+      const subtotal = selectedServices.reduce((sum, s) => sum + s.price * (s.quantity || 1), 0)
       let discount = 0
       let finalTotal = subtotal
       
@@ -821,7 +1593,7 @@
       
       // Update UI
       // Compute total estimated time
-      const totalMinutes = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0)
+      const totalMinutes = selectedServices.reduce((sum, s) => sum + (s.duration || 0) * (s.quantity || 1), 0)
 
       // Helper: format minutes to hours/min string
       const formatMinutes = (m) => {
@@ -851,6 +1623,27 @@
       totalContainer.classList.remove("hidden")
     }
 
+    function changeQuantity(id, delta) {
+      const service = selectedServices.find((s) => s.id === id)
+      if (!service) return
+
+      const currentQty = service.quantity || 1
+      const newQty = Math.max(1, currentQty + delta)
+      if (newQty === currentQty) return
+
+      service.quantity = newQty
+
+      if (service.type === "heloliving_item") {
+        const idx = selectedHelolivingItems.findIndex((i) => i.id === id)
+        if (idx > -1) {
+          selectedHelolivingItems[idx].quantity = newQty
+        }
+      }
+
+      renderServiceList(serviceSearch.value)
+      updateSelectedServicesUI()
+    }
+
     function formatCurrency(amount) {
       return new Intl.NumberFormat("id-ID", {
         style: "currency",
@@ -867,7 +1660,7 @@
         return
       }
 
-      const subtotal = selectedServices.reduce((sum, s) => sum + s.price, 0)
+      const subtotal = selectedServices.reduce((sum, s) => sum + s.price * (s.quantity || 1), 0)
       let discount = 0
       let finalTotal = subtotal
       
@@ -897,7 +1690,7 @@
         subtotal: subtotal,
         discount: discount,
         total: finalTotal,
-        totalEstimatedMinutes: selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0),
+        totalEstimatedMinutes: selectedServices.reduce((sum, s) => sum + (s.duration || 0) * (s.quantity || 1), 0),
       }
 
       // Save to localStorage and redirect to checkout
