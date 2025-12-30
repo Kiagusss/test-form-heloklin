@@ -1,0 +1,294 @@
+/* Google Maps container styling */
+#map {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Custom styles for service items */
+.service-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.service-item.selected .service-checkbox {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.service-item.selected .service-checkbox svg {
+  display: block;
+}
+
+.service-checkbox svg {
+  display: none;
+  color: white;
+}
+
+/* Animation for spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Custom styles for service cards */
+.service-card.helosleep {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+
+.service-card.heloliving {
+  border-left-color: #10b981;
+  background: #ecfdf5;
+}
+
+.service-card.helobaby {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.service-card.helosleep .service-card-category {
+  color: #2563eb;
+}
+
+.service-card.heloliving .service-card-category {
+  color: #10b981;
+}
+
+.service-card.helobaby .service-card-category {
+  color: #f59e0b;
+}
+
+.category-badge.helosleep {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.category-badge.heloliving {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.category-badge.helobaby {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+/* Package card styles */
+.package-card {
+  display: block;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.package-card.selected {
+  border-color: #0099d5;
+  background: #eff6ff;
+}
+
+/* Addon checkbox styles */
+.addon-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.addon-item.selected .addon-checkbox {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.addon-item.selected .addon-checkbox svg {
+  display: block;
+  color: white;
+}
+
+.addon-checkbox svg {
+  display: none;
+  color: white;
+}
+
+/* Heloliving item styles */
+.heloliving-item {
+  transition: all 0.2s ease;
+}
+
+.heloliving-item.selected {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+/* Carousel styles */
+.carousel-slide {
+  min-width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #f3f4f6;
+  position: relative;
+}
+
+.carousel-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.carousel-dot.active {
+  background: white;
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+.carousel-dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Welcome Modal Styles */
+#welcomeModal {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+#welcomeModal.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.welcome-modal-content {
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+  padding: 2.5rem;
+  animation: slideUp 0.4s ease;
+  text-align: center;
+}
+
+.welcome-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #0099d5 0%, #0077aa 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 8px 20px rgba(0, 153, 213, 0.3);
+}
+
+.welcome-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.welcome-description {
+  font-size: 1rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.welcome-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.welcome-button {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.welcome-button.primary {
+  background: #0099d5;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 153, 213, 0.3);
+}
+
+.welcome-button.primary:hover {
+  background: #0077aa;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 153, 213, 0.4);
+}
+
+.welcome-button.secondary {
+  background: #10b981;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.welcome-button.secondary:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.welcome-button svg {
+  width: 20px;
+  height: 20px;
+}

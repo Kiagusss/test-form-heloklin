@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return
         }
 
-        const position = { lat: order.latitude, lng: order.longitude }
+        const position = { lat: parseFloat(order.latitude), lng: parseFloat(order.longitude) }
         
         const map = new google.maps.Map(mapContainer, {
           center: position,
