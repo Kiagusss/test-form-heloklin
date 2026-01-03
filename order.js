@@ -130,6 +130,9 @@ let selectedHelolivingItems = [];
 let map = null;
 let currentLat = -6.2088;
 let currentLng = 106.8456;
+let reverseGeocodeTimeout = null;
+let googleGeocoder = null;
+let hasUserTriggeredLocation = false;
 
 // DOM Elements
 let orderForm, serviceModal, openModalBtn, closeModalBtn, serviceSearch;
@@ -433,8 +436,35 @@ function initMap() {
     marker.setPosition({ lat: currentLat, lng: currentLng });
   });
 
+  // Saat user selesai menggeser peta, update alamat otomatis.
+  map.addListener('idle', () => {
+    // Jangan isi otomatis saat load pertama; hanya setelah user interaksi.
+    if (!hasUserTriggeredLocation) return;
+    const center = map.getCenter();
+    if (!center) return;
+    currentLat = center.lat();
+    currentLng = center.lng();
+    document.getElementById('latitude').value = currentLat;
+    document.getElementById('longitude').value = currentLng;
+    scheduleReverseGeocode(currentLat, currentLng);
+  });
+
+  // Tandai bahwa user sudah berinteraksi dengan peta.
+  map.addListener('dragstart', () => {
+    hasUserTriggeredLocation = true;
+  });
+  map.addListener('zoom_changed', () => {
+    if (hasUserTriggeredLocation) return;
+    // zoom_changed bisa terjadi karena tombol +/- di map; anggap sebagai interaksi user.
+    hasUserTriggeredLocation = true;
+  });
+
   document.getElementById('latitude').value = currentLat;
   document.getElementById('longitude').value = currentLng;
+
+  if (typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+    googleGeocoder = new google.maps.Geocoder();
+  }
 
   console.log('Google Maps initialized successfully');
 }
@@ -500,6 +530,7 @@ function getCurrentLocation() {
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
+      hasUserTriggeredLocation = true;
       currentLat = position.coords.latitude;
       currentLng = position.coords.longitude;
 
@@ -511,7 +542,7 @@ function getCurrentLocation() {
       document.getElementById("latitude").value = currentLat;
       document.getElementById("longitude").value = currentLng;
 
-      reverseGeocode(currentLat, currentLng);
+      scheduleReverseGeocode(currentLat, currentLng);
 
       getLocationBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -536,10 +567,20 @@ function getCurrentLocation() {
   );
 }
 
+// Debounce reverse geocoding supaya tidak spam saat peta digeser.
+function scheduleReverseGeocode(lat, lon) {
+  if (reverseGeocodeTimeout) clearTimeout(reverseGeocodeTimeout);
+  reverseGeocodeTimeout = setTimeout(() => reverseGeocode(lat, lon), 400);
+}
+
 function reverseGeocode(lat, lon) {
+  // Coba Google dulu untuk dapat alamat terlengkap (sering sudah termasuk RT/RW jika tersedia).
+  reverseGeocodeGoogleFallback(lat, lon);
+
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
 
-  fetch(url, { headers: { "User-Agent": "heloklin/1.0" } })
+  // Catatan: Browser tidak mengizinkan set header "User-Agent", jadi jangan dipaksa.
+  fetch(url)
     .then((res) => res.json())
     .then((data) => {
       if (!data.address) return;
@@ -557,20 +598,115 @@ function reverseGeocode(lat, lon) {
 
       const detailAlamat = addressParts.join(", ");
 
-      if (detailAlamat) {
-        document.getElementById("alamat").value = detailAlamat;
+      const alamatEl = document.getElementById("alamat");
+      const existingAlamat = (alamatEl?.value || "").trim();
+
+      // Isi otomatis hanya jika user belum mengetik.
+      if (alamatEl && !existingAlamat) {
+        // Prioritas: detail jalan/nomor -> display_name (alamat lengkap dari Nominatim)
+        alamatEl.value = detailAlamat || data.display_name || "";
       }
 
       document.getElementById("kelurahan").value =
         addr.village || addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || "";
 
-      document.getElementById("kecamatan").value =
+      const kecamatanEl = document.getElementById("kecamatan");
+      const existingKecamatan = (kecamatanEl?.value || "").trim();
+      const nominatimKecamatan =
         addr.subdistrict || addr.city_district || addr.district || addr.borough || addr.county || addr.municipality || "";
+
+      // Jangan menimpa input manual; hanya isi jika masih kosong.
+      if (kecamatanEl && !existingKecamatan) {
+        kecamatanEl.value = nominatimKecamatan;
+      }
 
       document.getElementById("kota").value =
         addr.city || addr.town || addr.city_district || addr.municipality || addr.state_district || addr.state || "";
+
+      // Kadang Nominatim tidak menyediakan field kecamatan untuk koordinat tertentu.
+      // Fallback: gunakan Google Maps Geocoder untuk mengambil administrative_area_level_3 / sublocality_level_1.
+      const kecamatanAfter = (document.getElementById("kecamatan")?.value || "").trim();
+      const alamatAfter = (document.getElementById("alamat")?.value || "").trim();
+      if (!kecamatanAfter || !alamatAfter) {
+        reverseGeocodeGoogleFallback(lat, lon);
+      }
     })
-    .catch((err) => console.error("Reverse Geocoding Error:", err));
+    .catch((err) => {
+      console.error("Reverse Geocoding Error:", err);
+      reverseGeocodeGoogleFallback(lat, lon);
+    });
+}
+
+function reverseGeocodeGoogleFallback(lat, lng) {
+  if (!googleGeocoder) return;
+
+  const alamatEl = document.getElementById("alamat");
+  const kelurahanEl = document.getElementById("kelurahan");
+  const kecamatanEl = document.getElementById("kecamatan");
+  const kotaEl = document.getElementById("kota");
+  if (!alamatEl && !kelurahanEl && !kecamatanEl && !kotaEl) return;
+
+  const hasAlamat = !!(alamatEl && (alamatEl.value || "").trim());
+  const hasKelurahan = !!(kelurahanEl && (kelurahanEl.value || "").trim());
+  const hasKecamatan = !!(kecamatanEl && (kecamatanEl.value || "").trim());
+  const hasKota = !!(kotaEl && (kotaEl.value || "").trim());
+  if (hasAlamat && hasKelurahan && hasKecamatan && hasKota) return;
+
+  googleGeocoder.geocode({ location: { lat, lng } }, (results, status) => {
+    if (status !== 'OK' || !results || results.length === 0) return;
+
+    // Pilih hasil paling "street address" agar mirip tampilan paling atas di Google Maps.
+    const pickBestResult = (list) => {
+      let best = list[0];
+      let bestScore = -1;
+      for (const r of list) {
+        const t = r.types || [];
+        let score = 0;
+        if (t.includes('street_address')) score += 3;
+        if (t.includes('premise')) score += 2;
+        if (t.includes('subpremise')) score += 1;
+        if (t.includes('route')) score += 1;
+        if (t.includes('plus_code')) score -= 2;
+        if (score > bestScore) {
+          bestScore = score;
+          best = r;
+        }
+      }
+      return best;
+    };
+
+    const best = pickBestResult(results);
+
+    if (alamatEl && !(alamatEl.value || "").trim()) {
+      // Jika formatted_address berisi RT/RW (kadang ada), ini yang paling lengkap.
+      alamatEl.value = best.formatted_address || "";
+    }
+
+    const components = best.address_components || [];
+    const findLongName = (type) => {
+      const c = components.find((x) => (x.types || []).includes(type));
+      return c ? c.long_name : "";
+    };
+
+    if (kecamatanEl && !(kecamatanEl.value || "").trim()) {
+      const kecamatan = findLongName('administrative_area_level_3') || findLongName('sublocality_level_1');
+      if (kecamatan) kecamatanEl.value = kecamatan;
+    }
+
+    if (kelurahanEl && !(kelurahanEl.value || "").trim()) {
+      const kelurahan =
+        findLongName('administrative_area_level_4') ||
+        findLongName('sublocality_level_2') ||
+        findLongName('sublocality') ||
+        findLongName('neighborhood');
+      if (kelurahan) kelurahanEl.value = kelurahan;
+    }
+
+    if (kotaEl && !(kotaEl.value || "").trim()) {
+      const kota = findLongName('administrative_area_level_2') || findLongName('locality');
+      if (kota) kotaEl.value = kota;
+    }
+  });
 }
 
 // =======================
